@@ -6,6 +6,7 @@ RM_Manager::~RM_Manager() {}
 RC CreateFile(const char *fileName, int recordSize) {
 	int createStatus = _pfm->CreateFile(fileName);
 	if (createStatus != OK_RC) return createStatus;
+	if (recordSize <= 0 || recordSize > PF_PAGE_SIZE) return RM_BADRECORDSIZE;
 	
 }
 RC DestroyFile(const char *fileName) {

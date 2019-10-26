@@ -16,12 +16,12 @@
 #ifndef PF_H
 #define PF_H
 
-#include "../Constants.h"
+#include "../constants.h"
 
 //
 // PageNum: uniquely identifies a page in a file
 //
-typedef long PageNum;
+typedef int PageNum;
 
 // Page Size
 //
@@ -30,7 +30,7 @@ typedef long PageNum;
 // Unfortunately, we cannot use sizeof(PF_PageHdr) here, but it is an
 // int and we simply use that.
 //
-const int PF_PAGE_SIZE = (4096 - sizeof(int));
+const int PF_PAGE_SIZE = 4096 - sizeof(int);
 
 //
 // PF_PageHandle: PF page interface
@@ -100,6 +100,7 @@ public:
 
    // Force a page or pages to disk (but do not remove from the buffer pool)
    RC ForcePages  (PageNum pageNum=ALL_PAGES) const;
+
 private:
 
    // IsValidPageNum will return TRUE if page number is valid and FALSE
@@ -152,8 +153,6 @@ public:
    RC AllocateBlock (char *&buffer);
    // Dispose of a memory chunk managed by the buffer manager.
    RC DisposeBlock  (char *buffer);
-
-    static PF_Manager & getInstance();
 
 private:
    PF_BufferMgr *pBufferMgr;                      // page-buffer manager

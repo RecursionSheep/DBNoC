@@ -12,8 +12,6 @@
 #include <sys/types.h>
 #include "pf_internal.h"
 #include "pf_buffermgr.h"
-#include "pf.h"
-
 
 //
 // PF_Manager
@@ -55,17 +53,14 @@ RC PF_Manager::CreateFile (const char *fileName)
    int numBytes;		// return code form write syscall
 
    // Create file for exclusive use
-
    if ((fd = open(fileName,
-#ifdef _WIN32
+#ifdef PC
          O_BINARY |
 #endif
          O_CREAT | O_EXCL | O_WRONLY,
          CREATION_MASK)) < 0)
       return (PF_UNIX);
 
-//	if ((fd = open(fileName, O_BINARY | O_CREAT | O_EXCL | O_WRONLY, CREATION_MASK)) < 0)
-//      return (PF_UNIX);
    // Initialize the file header: must reserve FileHdrSize bytes in memory
    // though the actual size of FileHdr is smaller
    char hdrBuf[PF_FILE_HDR_SIZE];
@@ -130,13 +125,12 @@ RC PF_Manager::DestroyFile (const char *fileName)
 // In:   fileName - name of file to open
 // Out:  fileHandle - refer to the open file
 //                    this function modifies local var's in fileHandle
-//       to point to the file data in the file foreign_table, and to point to the
+//       to point to the file data in the file table, and to point to the
 //       buffer manager object
 // Ret:  PF_FILEOPEN or other PF return code
 //
 RC PF_Manager::OpenFile (const char *fileName, PF_FileHandle &fileHandle)
 {
-   //printf("PF_Manager::OpenFile fileName = %s\n", fileName);
    int rc;                   // return code
 
    // Ensure file is not already open
@@ -144,20 +138,17 @@ RC PF_Manager::OpenFile (const char *fileName, PF_FileHandle &fileHandle)
       return (PF_FILEOPEN);
 
    // Open the file
-
    if ((fileHandle.unixfd = open(fileName,
-#ifdef _WIN32
-           O_BINARY |
+#ifdef PC
+         O_BINARY |
 #endif
-                                 O_RDWR)) < 0)
+         O_RDWR)) < 0)
       return (PF_UNIX);
 
-//	if ((fileHandle.unixfd = open(fileName, O_BINARY | O_RDWR)) < 0)
-//		return PF_UNIX;
    // Read the file header
    {
-      int numBytes = read(fileHandle.unixfd, (char *)&fileHandle.hdr, sizeof(PF_FileHdr));
-	  //printf("filename = %s header = %s\n", fileName, (char*)&fileHandle.hdr);
+      int numBytes = read(fileHandle.unixfd, (char *)&fileHandle.hdr,
+            sizeof(PF_FileHdr));
       if (numBytes != sizeof(PF_FileHdr)) {
          rc = (numBytes < 0) ? PF_UNIX : PF_HDRREAD;
          goto err;
@@ -175,7 +166,6 @@ RC PF_Manager::OpenFile (const char *fileName, PF_FileHandle &fileHandle)
    return 0;
 
 err:
-   //printf("goto err line = %d\n", __LINE__);
    // Close file
    close(fileHandle.unixfd);
    fileHandle.bFileOpen = FALSE;
@@ -290,9 +280,4 @@ RC PF_Manager::AllocateBlock(char *&buffer)
 RC PF_Manager::DisposeBlock(char *buffer)
 {
    return pBufferMgr->DisposeBlock(buffer);
-}
-
-PF_Manager &PF_Manager::getInstance() {
-   static PF_Manager pf_manager;
-   return pf_manager;
 }

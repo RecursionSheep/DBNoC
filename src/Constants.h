@@ -1,60 +1,24 @@
+//
+//   global declarations
+//
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#include <string>
-
-typedef unsigned int *BufType;
-enum class AttrType {
-    INT = 0, FLOAT, STRING, DATE, VARCHAR, BOOL, NO_ATTR
-};
-
-enum class CompOp {
-    EQ_OP = 0, LT_OP, GT_OP, LE_OP, GE_OP, NE_OP, IS_OP, ISNOT_OP, LIKE_OP, NO_OP
-};
-enum class ArithOp {
-    ADD_OP = 0, SUB_OP, MUL_OP, DIV_OP, MINUS_OP, NO_OP
-};
-enum class LogicOp {
-    AND_OP = 0, OR_OP, NOT_OP, NO_OP
-};
-
-enum class ClientHint {
-    NO_HINT
-};
-enum class AggregationType {
-    T_NONE = 0,
-    T_AVG,
-    T_SUM,
-    T_MIN,
-    T_MAX
-};
-
-enum class ConstraintType {
-    PRIMARY_CONSTRAINT,
-    FOREIGN_CONSTRAINT,
-    CHECK_CONSTRAINT
-};
-
-#define MAX_NAME 25
-#define MAX_ATTRS 10
-#define MAX_STRING_LEN 256
-#define COLUMN_FLAG_NOTNULL 0x1
-
-struct AttrInfo {
-    char attrName[MAX_NAME + 1];
-    int attrSize;
-    int attrLength;
-    AttrType attrType;
-    int columnFlag;
-};
-
+// Please DO NOT include any other files in this file.
 
 //
-// redbase.h
-//   global declarations
+// Globally-useful defines
 //
-#ifndef REDBASE_H
-#define REDBASE_H
+#define MAXNAME       24                // maximum length of a relation
+                                        // or attribute name
+#define MAXSTRINGLEN  255               // maximum length of a
+                                        // string-type attribute
+#define MAXATTRS      40                // maximum number of attributes
+                                        // in a relation
+
+#define YY_SKIP_YYWRAP 1
+#define yywrap() 1
+void yyerror(const char *);
 
 //
 // Return codes
@@ -90,6 +54,30 @@ typedef int RC;
 const int ALL_PAGES = -1;
 
 //
+// Attribute types
+//
+enum AttrType {
+    INT,
+    FLOAT,
+    STRING
+};
+
+//
+// Comparison operators
+//
+enum CompOp {
+    NO_OP,                                      // no comparison
+    EQ_OP, NE_OP, LT_OP, GT_OP, LE_OP, GE_OP    // binary atomic operators
+};
+
+//
+// Pin Strategy Hint
+//
+enum ClientHint {
+    NO_HINT                                     // default value
+};
+
+//
 // TRUE, FALSE and BOOLEAN
 //
 #ifndef BOOLEAN
@@ -109,5 +97,3 @@ typedef char Boolean;
 #endif
 
 #endif
-
-#endif //CONSTANTS_H

@@ -6,7 +6,6 @@
 //
 
 #include "pf_internal.h"
-#include "pf.h"
 
 //
 // Defines
