@@ -1,18 +1,36 @@
 #include "rm.h"
+#include <cstring>
 
-RM_Manager::RM_Manager(PF_Manager &pfm) { _pfm = &pfm; }
+RM_Manager::RM_Manager() {}
 RM_Manager::~RM_Manager() {}
 
-RC CreateFile(const char *fileName, int recordSize) {
-	int createStatus = _pfm->CreateFile(fileName);
-	if (createStatus != OK_RC) return createStatus;
-	if (recordSize <= 0 || recordSize > PF_PAGE_SIZE) return RM_BADRECORDSIZE;
-	
+bool RM_Manager::CreateFile(const char *fileName, int recordSize) {
+	if (!fileManager.createFile(fileName)) return false;
+	int fileID;
+	if (!fileManager.openFile(fileName, fileID)) return false;
+	RM_FileHeader header;
+	header.recordSize = recordSize;
+	header.recordNumPerPage = (PAGE_SIZE - sizeof(RM_PageHeader)) * 8 / (recordSize * 32 + 1) - 1;
+	header.firstFreePage = 0;
+	header.pageNumber = 1;
+	header.bitmapSize = (header.recordNumPerPage - 1) / 32 + 1;
+	header.bitmapStart = sizeof(RM_PageHeader) / sizeof(int);
+	int index;
+	BufType buf = bufPageManager.getPage(fileID, 0, index);
+	memcpy(buf, &header, sizeof(RM_FileHeader));
+	bufPageManager.markDirty(index);
+	bufPageManager.writeBack(index);
+	fileManager.closeFile(fileID);
+	return true;
 }
-RC DestroyFile(const char *fileName) {
-	_pfm->DestroyFile(fileName);
+bool RM_Manager::DestroyFile(const char *fileName) {
+	// todo
 }
-RC OpenFile(const char *fileName, RM_FileHandle &fileHandle) {
+bool RM_Manager::OpenFile(const char *fileName, int &fileID) {
+	if (!fileManager.openFile(fileName, fileID)) return false;
+	return true;
 }
-RC CloseFile(RM_FileHandle &fileHandle) {
+bool RM_Manager::CloseFile(int fileID) {
+	if (fileManager.closeFile(fileID)) return false;
+	return true;
 }
