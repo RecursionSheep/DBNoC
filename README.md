@@ -1,6 +1,6 @@
 ## A DataBase that Draws No Conclusions
 
-**DBNoC** (A DataBase that Draws No Conclusions) is the project for the course -- Introduction to Database Management Systems (数据库系统概论), Fall 2019, Tsinghua University. The paged file component is based on [Stanford CS346 Redbase Project](https://web.stanford.edu/class/cs346/2015/).
+**DBNoC** (A DataBase that Draws No Conclusions) is the project for the course -- Introduction to Database Management Systems (数据库系统概论), Fall 2019, Tsinghua University.
 
 ![hyouka](hyouka.png)
 
