@@ -1,11 +1,10 @@
 #pragma once
 
-#include "../pf/bufmanager/BufPageManager.h"
-#include "../pf/fileio/FileManager.h"
-#include "../pf/utils/pagedef.h"
+#include "../pf/pf.h"
+#include "../utils.h"
 
-FileManager fileManager;
-BufPageManager bufPageManager(&fileManager);
+extern FileManager fileManager;
+extern BufPageManager bufPageManager;
 
 struct RM_FileHeader {
 	int recordSize, recordNumPerPage;
@@ -22,7 +21,10 @@ struct RM_PageHeader {
 
 class RM_Manager {
 public:
-	RM_Manager();
+	FileManager *fileManager;
+	BufPageManager *bufPageManager;
+	
+	RM_Manager(FileManager *_fileManager, BufPageManager *_bufPageManager);
 	~RM_Manager();
 	
 	bool CreateFile(const char *fileName, int recordSize);
@@ -33,7 +35,10 @@ public:
 
 class RM_FileHandle {
 public:
-	RM_FileHandle(int fileID);
+	FileManager *fileManager;
+	BufPageManager *bufPageManager;
+	
+	RM_FileHandle(FileManager *_fileManager, BufPageManager *_bufPageManager, int fileID);
 	~RM_FileHandle();
 	
 	bool GetRec(int pageID, int slotID, BufType data) const;
