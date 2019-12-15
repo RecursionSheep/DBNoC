@@ -10,7 +10,6 @@ struct IX_FileHeader {
 	int childNum;
 	int childStart, pageStart, slotStart, keyStart;
 	int rootPage;
-	int firstLeaf;
 	int nodeNum;
 };
 
@@ -24,8 +23,8 @@ struct IX_PageHeader {
 
 struct IX_TreeNode {
 public:
-	IX_PageHeader *header;
-	BufType child, page, slot;
+	IX_PageHeader header;
+	BufType data, child, page, slot;
 	char *key;
 	int index;
 };
@@ -58,8 +57,8 @@ public:
 	bool InsertEntry(void *pData, int pageID, int slotID);
 	bool DeleteEntry(void *pData, int pageID, int slotID);
 	
-private:
 	IX_TreeNode* _getNode(int id);
+private:
 	void _writeBackNode(IX_TreeNode* node);
 	
 	int _indexID, _fileID;
@@ -74,10 +73,18 @@ public:
 	IX_IndexScan(FileManager *_fileManager, BufPageManager *_bufPageManager, int indexID, int fileID);
 	~IX_IndexScan();
 	
-	bool OpenScan(CompOp compOp, void *value);
+	bool OpenScan(void *pData, bool lower);
+	bool GetPrevEntry(int &pageID, int &slotID);
 	bool GetNextEntry(int &pageID, int &slotID);
 	bool CloseScan();
 	
+	int _nodeID, _entry;
+	IX_TreeNode* _getNode(int id);
 private:
+	void _writeBackNode(IX_TreeNode* node);
+	
+	IX_FileHeader _header;
 	int _indexID, _fileID;
 };
+
+bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int slot2, AttrType attrType);

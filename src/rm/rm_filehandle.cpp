@@ -29,11 +29,11 @@ bool RM_FileHandle::InsertRec(int &pageID, int &slotID, const BufType data) {
 		BufType page0 = bufPageManager->getPage(_fileID, 0, index0);
 		memcpy(page0, &_header, sizeof(RM_FileHeader));
 		bufPageManager->markDirty(index0);
-		bufPageManager->writeBack(index0);
+		//bufPageManager->writeBack(index0);
 		page0 = bufPageManager->getPage(_fileID, _header.firstFreePage, index0);
 		memset(page0, 0, PAGE_SIZE);
 		bufPageManager->markDirty(index0);
-		bufPageManager->writeBack(index0);
+		//bufPageManager->writeBack(index0);
 	}
 	int index;
 	pageID = _header.firstFreePage;
@@ -45,12 +45,12 @@ bool RM_FileHandle::InsertRec(int &pageID, int &slotID, const BufType data) {
 	_setBit(bitmap, _header.recordNumPerPage, slotID, 1);
 	if (++buf[1] == _header.recordNumPerPage) _header.firstFreePage = buf[0];
 	bufPageManager->markDirty(index);
-	bufPageManager->writeBack(index);
+	//bufPageManager->writeBack(index);
 	int index0;
 	BufType page0 = bufPageManager->getPage(_fileID, 0, index0);
 	memcpy(page0, &_header, sizeof(RM_FileHeader));
 	bufPageManager->markDirty(index0);
-	bufPageManager->writeBack(index0);
+	//bufPageManager->writeBack(index0);
 	return true;
 }
 bool RM_FileHandle::DeleteRec(int pageID, int slotID) {
@@ -66,7 +66,7 @@ bool RM_FileHandle::DeleteRec(int pageID, int slotID) {
 		BufType page0 = bufPageManager->getPage(_fileID, 0, index0);
 		memcpy(page0, &_header, sizeof(RM_FileHeader));
 		bufPageManager->markDirty(index0);
-		bufPageManager->writeBack(index0);
+		//bufPageManager->writeBack(index0);
 	}
 	bufPageManager->markDirty(index);
 	bufPageManager->writeBack(index);
@@ -80,7 +80,7 @@ bool RM_FileHandle::UpdateRec(int pageID, int slotID, const BufType data) {
 	BufType record = bitmap + _header.bitmapSize + slotID * _header.recordSize;
 	memcpy(record, data, _header.recordSize * sizeof(uint));
 	bufPageManager->markDirty(index);
-	bufPageManager->writeBack(index);
+	//bufPageManager->writeBack(index);
 	return true;
 }
 

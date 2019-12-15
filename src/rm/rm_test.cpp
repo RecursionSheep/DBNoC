@@ -26,5 +26,6 @@ int main() {
 	printf("%d\n", *((int*)data));
 	handle->DeleteRec(pageID, slotID);
 	printf("%d\n", handle->GetRec(pageID, slotID, (BufType)data));
+	bufPageManager->close();
 	return 0;
 }

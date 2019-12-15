@@ -1,7 +1,8 @@
 #include "ix.h"
 #include <sstream>
+#include <cstring>
 
-IX_Manager::IX_Manager() {
+IX_Manager::IX_Manager(FileManager *_fileManager, BufPageManager *_bufPageManager) {
 	fileManager = _fileManager; bufPageManager = _bufPageManager;
 }
 IX_Manager::~IX_Manager() {}
@@ -33,22 +34,22 @@ bool IX_Manager::CreateIndex(const char *fileName, int indexID, AttrType attrTyp
 	header.pageStart = header.childStart + header.childNum;
 	header.slotStart = header.pageStart + header.childNum;
 	header.keyStart = header.slotStart + header.childNum;
-	header.firstLeaf = 1;
+	header.childNum--;
 	int index;
-	BufType buf = bufPageManager.getPage(fileID, 0, index);
+	BufType buf = bufPageManager->getPage(fileID, 0, index);
 	memcpy(buf, &header, sizeof(IX_FileHeader));
 	bufPageManager->markDirty(index);
-	bufPageManager->writeBack(index);
+	//bufPageManager->writeBack(index);
 	
 	IX_PageHeader pageHeader;
 	pageHeader.isLeaf = true;
 	pageHeader.keyNum = pageHeader.parent = pageHeader.whichChild = 0;
-	pageHeader.nextLeaf = 0;
+	pageHeader.nextLeaf = pageHeader.prevLeaf = 0;
 	int pageIndex;
 	BufType pageBuf = bufPageManager->getPage(fileID, 1, pageIndex);
 	memcpy(pageBuf, &pageHeader, sizeof(IX_PageHeader));
 	bufPageManager->markDirty(pageIndex);
-	bufPageManager->writeBack(pageIndex);
+	//bufPageManager->writeBack(pageIndex);
 	return true;
 }
 bool IX_Manager::DestroyIndex(const char *fileName, int indexID) {
@@ -63,4 +64,24 @@ bool IX_Manager::OpenIndex(const char *fileName, int indexID, int &fileID) {
 bool IX_Manager::CloseIndex(int indexID, int fileID) {
 	if (fileManager->closeFile(fileID)) return false;
 	return true;
+}
+
+bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int slot2, AttrType attrType) {
+	bool compareData1, compareData2;
+	if (attrType == INTEGER) {
+		compareData1 = *((int*)data1) < *((int*)data2);
+		compareData2 = *((int*)data1) > *((int*)data2);
+	} else if (attrType == FLOAT) {
+		compareData1 = *((double*)data1) < *((double*)data2);
+		compareData2 = *((double*)data1) > *((double*)data2);
+	} else if (attrType == STRING) {
+		int compareStr = strcmp((char*)data1, (char*)data2);
+		compareData1 = compareStr < 0;
+		compareData2 = compareStr > 0;
+	}
+	if (compareData1) return true;
+	if (compareData2) return false;
+	if (page1 < page2) return true;
+	if (page1 > page2) return false;
+	return slot1 < slot2;
 }

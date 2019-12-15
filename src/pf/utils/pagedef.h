@@ -29,7 +29,7 @@
 /*
  * hash算法的模
  */
-#define MOD 23333
+#define MOD 60000
 #define IN_DEBUG 0
 #define DEBUG_DELETE 0
 #define DEBUG_ERASE 1

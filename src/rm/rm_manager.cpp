@@ -21,7 +21,7 @@ bool RM_Manager::CreateFile(const char *fileName, int recordSize) {
 	BufType buf = bufPageManager->getPage(fileID, 0, index);
 	memcpy(buf, &header, sizeof(RM_FileHeader));
 	bufPageManager->markDirty(index);
-	bufPageManager->writeBack(index);
+	//bufPageManager->writeBack(index);
 	fileManager->closeFile(fileID);
 	return true;
 }
