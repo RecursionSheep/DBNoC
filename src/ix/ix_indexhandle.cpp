@@ -72,6 +72,7 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 					parentNode = _getNode(parent);
 					parentNode->header.keyNum = 1; parentNode->header.isLeaf = false; parentNode->header.parent = 0;
 					parentNode->page[0] = node->page[0]; parentNode->slot[0] = node->slot[0];
+					parentNode->child[0] = id;
 					memcpy(parentNode->key, node->key, _header.attrLen);
 					node->header.parent = parent; node->header.whichChild = 0;
 				} else
@@ -114,6 +115,7 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 						delete nextLeaf;
 					}
 					node->header.nextLeaf = newID;
+					fprintf(stderr, "new next leaf %d\n", node->header.nextLeaf);
 				}
 				for (int i = whichChild + 2; i < parentNode->header.keyNum; i++) {
 					IX_TreeNode *child = _getNode(parentNode->child[i]);

@@ -38,14 +38,14 @@ bool IX_IndexScan::OpenScan(void *pData, bool lower) {
 		if (!node->header.isLeaf) {
 			bool flag = false;
 			for (int i = node->header.keyNum - 1; i >= 0; i--) {
-				fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
+				//fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
 				if (compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType)) {
 					id = node->child[i];
 					flag = true;
 					break;
 				}
 			}
-			fprintf(stderr, "\n");
+			//fprintf(stderr, "\n");
 			if (!flag) id = node->child[0];
 		} else {
 			_nodeID = id;
@@ -75,8 +75,9 @@ bool IX_IndexScan::GetNextEntry(int &pageID, int &slotID) {
 	pageID = node->page[_entry]; slotID = node->slot[_entry];
 	if (_entry + 1 == node->header.keyNum) {
 		if (node->header.nextLeaf == 0) {
+			fprintf(stderr, "node %d next leaf %d keynum %d\n", _nodeID, node->header.nextLeaf, node->header.keyNum);
 			delete node;
-			return true;
+			return false;
 		}
 		_nodeID = node->header.nextLeaf;
 		_entry = 0;

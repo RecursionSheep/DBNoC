@@ -35,11 +35,11 @@ int main() {
 		auto it = s.lower_bound(make_pair(x, make_pair(-1, -1)));
 		IX_IndexScan *scan = new IX_IndexScan(fileManager, bufPageManager, 1, fileID);
 		scan->OpenScan(&x, true);
-		fprintf(stderr, "ok\n");
+		//fprintf(stderr, "set %.3lf\n", (*it).first);
 		while (it != s.end()) {
 			int page = -1, slot = -1;
-			assert(scan->GetNextEntry(page, slot));
-			if ((*it).second.first != page) fprintf(stderr, "%d %d\n", (*it).second.first, page);
+			if (!scan->GetNextEntry(page, slot)) fprintf(stderr, "end of index\n");
+			//fprintf(stderr, "%d %.3lf\n", (*it).second.first, (*it).first);
 			assert((*it).second.first == page);
 			it++;
 		}
