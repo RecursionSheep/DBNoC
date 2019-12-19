@@ -6,7 +6,7 @@ using namespace std;
 set<pair<double, pair<int, int> > > s;
 
 int main() {
-	srand(233);
+	srand(time(0));
 	FileManager *fileManager = new FileManager();
 	BufPageManager *bufPageManager = new BufPageManager(fileManager);
 	IX_Manager *ixm = new IX_Manager(fileManager, bufPageManager);
@@ -43,12 +43,12 @@ int main() {
 			assert((*it).second.first == page);
 			it++;
 		}
-		fprintf(stderr, "ok\n");
 		scan->CloseScan();
 		delete scan;
 		//fprintf(stderr, "\n");
 	}
 	ixm->CloseIndex(1, fileID);
 	bufPageManager->close();
+	fprintf(stderr, "close\n");
 	return 0;
 }

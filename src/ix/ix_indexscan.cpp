@@ -52,7 +52,7 @@ bool IX_IndexScan::OpenScan(void *pData, bool lower) {
 			_entry = -1;
 			for (int i = 0; i < node->header.keyNum; i++) {
 				if (compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType)) {
-					fprintf(stderr, "%.3lf %.3lf %d\n", *(double*)pData, *(double*)(node->key + i * _header.attrLen), *(double*)pData < *(double*)(node->key + i * _header.attrLen));
+					//fprintf(stderr, "%.3lf %.3lf %d\n", *(double*)pData, *(double*)(node->key + i * _header.attrLen), *(double*)pData < *(double*)(node->key + i * _header.attrLen));
 					_entry = i;
 					break;
 				}
@@ -75,7 +75,7 @@ bool IX_IndexScan::GetNextEntry(int &pageID, int &slotID) {
 	pageID = node->page[_entry]; slotID = node->slot[_entry];
 	if (_entry + 1 == node->header.keyNum) {
 		if (node->header.nextLeaf == 0) {
-			fprintf(stderr, "node %d next leaf %d keynum %d\n", _nodeID, node->header.nextLeaf, node->header.keyNum);
+			//fprintf(stderr, "node %d next leaf %d keynum %d\n", _nodeID, node->header.nextLeaf, node->header.keyNum);
 			delete node;
 			return false;
 		}
