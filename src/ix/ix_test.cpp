@@ -38,7 +38,7 @@ int main() {
 		//fprintf(stderr, "set %.3lf\n", (*it).first);
 		while (it != s.end()) {
 			int page = -1, slot = -1;
-			if (!scan->GetNextEntry(page, slot)) fprintf(stderr, "end of index\n");
+			scan->GetNextEntry(page, slot);
 			//fprintf(stderr, "%d %.3lf\n", (*it).second.first, (*it).first);
 			assert((*it).second.first == page);
 			it++;
@@ -47,8 +47,8 @@ int main() {
 		delete scan;
 		//fprintf(stderr, "\n");
 	}
-	ixm->CloseIndex(1, fileID);
 	bufPageManager->close();
+	ixm->CloseIndex(1, fileID);
 	fprintf(stderr, "close\n");
 	return 0;
 }
