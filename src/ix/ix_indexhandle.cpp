@@ -96,10 +96,14 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 					newNode->slot[i] = node->slot[i + node->header.keyNum];
 					memcpy(newNode->key + i * _header.attrLen, node->key + (i + node->header.keyNum) * _header.attrLen, _header.attrLen);
 				}
-				fprintf(stderr, "split: ");
+				/*fprintf(stderr, "split: ");
 				for (int i = 0; i < node->header.keyNum; i++)
 					fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
 				fprintf(stderr, "\n");
+				fprintf(stderr, "split: ");
+				for (int i = 0; i < newNode->header.keyNum; i++)
+					fprintf(stderr, "%.3lf ", *(double*)(newNode->key + i * _header.attrLen));
+				fprintf(stderr, "\n");*/
 				if (node->header.isLeaf) {
 					newNode->header.nextLeaf = node->header.nextLeaf;
 					newNode->header.prevLeaf = id;
@@ -151,7 +155,7 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 			}
 			/*fprintf(stderr, "pages %d\n", node->header.keyNum);
 			for (int i = 0; i < node->header.keyNum; i++)
-				fprintf(stderr, "%.8lf ", *(double*)(node->key + i * _header.attrLen));
+				fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
 			fprintf(stderr, "\n");*/
 			delete node;
 			break;
@@ -172,12 +176,17 @@ bool IX_IndexHandle::DeleteEntry(void *pData, int pageID, int slotID) {
 					break;
 				}
 		} else {
-			int pos;
+			int pos = -1;
 			for (int i = node->header.keyNum - 1; i >= 0; i--) {
 				if (!compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType)) {
 					pos = i;
 					break;
 				}
+			}
+			if (pos == -1) {
+				bufPageManager->access(node->index);
+				delete node;
+				return false;
 			}
 			node->header.keyNum--;
 			for (int i = pos; i < node->header.keyNum; i++) {
@@ -190,14 +199,15 @@ bool IX_IndexHandle::DeleteEntry(void *pData, int pageID, int slotID) {
 					IX_TreeNode *prevNode = _getNode(prevLeaf);
 					prevNode->header.nextLeaf = nextLeaf;
 					_writeBackNode(prevNode);
+					delete prevNode;
 				}
 				if (nextLeaf) {
 					IX_TreeNode *nextNode = _getNode(nextLeaf);
 					nextNode->header.prevLeaf = prevLeaf;
 					_writeBackNode(nextNode);
+					delete nextNode;
 				}
 			}
-			_writeBackNode(node);
 			while (node->header.keyNum == 0) {
 				int pos = node->header.whichChild;
 				int parent = node->header.parent;
@@ -210,16 +220,19 @@ bool IX_IndexHandle::DeleteEntry(void *pData, int pageID, int slotID) {
 					parentNode->slot[i - 1] = parentNode->slot[i];
 					memcpy(parentNode->key + (i - 1) * _header.attrLen, parentNode->key + i * _header.attrLen, _header.attrLen);
 					_writeBackNode(child);
+					delete child;
 				}
 				parentNode->header.keyNum--;
-				_writeBackNode(parentNode);
+				_writeBackNode(node);
 				delete node;
 				node = parentNode;
 				if (parent == _header.rootPage) break;
 			}
+			_writeBackNode(node);
 			delete node;
 			break;
 		}
 		delete node;
 	}
+	return true;
 }
