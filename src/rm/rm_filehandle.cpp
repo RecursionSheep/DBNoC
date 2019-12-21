@@ -11,6 +11,7 @@ RM_FileHandle::RM_FileHandle(FileManager *_fileManager, BufPageManager *_bufPage
 RM_FileHandle::~RM_FileHandle() {}
 
 bool RM_FileHandle::GetRec(int pageID, int slotID, BufType data) const {
+	//fprintf(stderr, "%d\n", _header.pageNumber);
 	if (pageID >= _header.pageNumber) return false;
 	int index;
 	BufType buf = bufPageManager->getPage(_fileID, pageID, index);
@@ -69,7 +70,7 @@ bool RM_FileHandle::DeleteRec(int pageID, int slotID) {
 		//bufPageManager->writeBack(index0);
 	}
 	bufPageManager->markDirty(index);
-	bufPageManager->writeBack(index);
+	//bufPageManager->writeBack(index);
 	return true;
 }
 bool RM_FileHandle::UpdateRec(int pageID, int slotID, const BufType data) {

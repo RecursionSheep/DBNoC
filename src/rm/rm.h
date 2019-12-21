@@ -3,9 +3,6 @@
 #include "../pf/pf.h"
 #include "../utils.h"
 
-extern FileManager fileManager;
-extern BufPageManager bufPageManager;
-
 struct RM_FileHeader {
 	int recordSize, recordNumPerPage;
 	int firstFreePage;
@@ -46,7 +43,6 @@ public:
 	bool DeleteRec(int pageID, int slotID);
 	bool UpdateRec(int pageID, int slotID, const BufType data);
 	
-private:
 	int _fileID;
 	RM_FileHeader _header;
 	
@@ -55,4 +51,20 @@ private:
 	bool _getBit(uint *bitmap, int size, int pos) const;
 	int _getFirstZero(uint *bitmap, int size) const;
 	int _getNextOne(uint *bitmap, int size, int pos) const;
+};
+
+class RM_FileScan {
+public:
+	FileManager *fileManager;
+	BufPageManager *bufPageManager;
+	
+	RM_FileScan(FileManager *_fileManager, BufPageManager *_bufPageManager);
+	~RM_FileScan();
+	
+	bool OpenScan(RM_FileHandle *filehandle);
+	bool GetNextRecord(int &pageID, int &slotID, BufType data);
+
+private:
+	int _pageID, _slotID, _fileID;
+	RM_FileHandle *_filehandle;
 };
