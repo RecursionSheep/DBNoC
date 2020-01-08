@@ -1,0 +1,8 @@
+每个数据库元信息meta.db
+表数量
+表名
+表的recordsize
+属性数量
+属性信息 not null primary key default foreign key
+
+建表：主键唯一，外键是合法的属性

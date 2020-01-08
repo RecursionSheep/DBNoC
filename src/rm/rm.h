@@ -24,6 +24,7 @@ public:
 	RM_Manager(FileManager *_fileManager, BufPageManager *_bufPageManager);
 	~RM_Manager();
 	
+	// recordSize Bytes
 	bool CreateFile(const char *fileName, int recordSize);
 	bool DestroyFile(const char *fileName);
 	bool OpenFile(const char *fileName, int &fileID);

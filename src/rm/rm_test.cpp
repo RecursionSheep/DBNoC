@@ -10,7 +10,7 @@ int main() {
 	FileManager *fileManager = new FileManager();
 	BufPageManager *bufPageManager = new BufPageManager(fileManager);
 	RM_Manager *rmm = new RM_Manager(fileManager, bufPageManager);
-	rmm->CreateFile("test", 2);
+	rmm->CreateFile("test", 8);
 	int fileID;
 	if (!rmm->OpenFile("test", fileID)) return 0;
 	RM_FileHandle *handle = new RM_FileHandle(fileManager, bufPageManager, fileID);

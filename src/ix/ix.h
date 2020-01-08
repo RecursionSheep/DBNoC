@@ -37,6 +37,7 @@ public:
 	IX_Manager(FileManager *_fileManager, BufPageManager *_bufPageManager);
 	~IX_Manager();
 	
+	// attrLen Bytes
 	bool CreateIndex(const char *fileName, int indexID, AttrType attrType, int attrLen);
 	bool DestroyIndex(const char *fileName, int indexID);
 	bool OpenIndex(const char *fileName, int indexID, int &fileID);

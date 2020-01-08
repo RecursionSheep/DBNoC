@@ -11,7 +11,8 @@ bool RM_Manager::CreateFile(const char *fileName, int recordSize) {
 	int fileID;
 	if (!fileManager->openFile(fileName, fileID)) return false;
 	RM_FileHeader header;
-	header.recordSize = recordSize;
+	while (recordSize % 4 != 0) recordSize++;
+	header.recordSize = recordSize >> 2;
 	header.recordNumPerPage = (PAGE_SIZE - sizeof(RM_PageHeader)) * 8 / (recordSize * 32 + 1) - 1;
 	header.firstFreePage = 0;
 	header.pageNumber = 1;
