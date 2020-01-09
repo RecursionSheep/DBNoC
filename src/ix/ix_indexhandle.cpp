@@ -239,3 +239,41 @@ bool IX_IndexHandle::DeleteEntry(void *pData, int pageID, int slotID) {
 	}
 	return true;
 }
+bool IX_IndexHandle::CheckEntry(void *pData) {
+	int id = _header.rootPage;
+	int pageID = -1;
+	int slotID = pageID;
+	while (1) {
+		IX_TreeNode *node = _getNode(id);
+		bufPageManager->access(node->index);
+		if (!node->header.isLeaf) {
+			bool flag = false;
+			for (int i = node->header.keyNum - 1; i >= 0; i--) {
+				//fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
+				if (compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType)) {
+					id = node->child[i];
+					flag = true;
+					break;
+				}
+			}
+			//fprintf(stderr, "\n");
+			if (!flag) id = node->child[0];
+		} else {
+			int _entry = -1;
+			for (int i = 0; i < node->header.keyNum; i++) {
+				if (memcmp(pData, node->key + i * _header.attrLen, _header.attrLen) == 0) {
+					_entry = i;
+					break;
+				}
+			}
+			if (_entry == -1) {
+				delete node;
+				return false;
+			}
+			delete node;
+			break;
+		}
+		delete node;
+	}
+	return true;
+}

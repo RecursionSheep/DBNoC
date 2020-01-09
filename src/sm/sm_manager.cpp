@@ -33,6 +33,7 @@ void SM_Manager::OpenDB(const string DBName) {
 		_tables[i].foreignSet.clear();
 		_tables[i].primary.clear();
 		metain >> _tables[i].recordSize;
+		metain >> _tables[i].primarySize;
 		for (int j = 0; j < _tables[i].attrNum; j++) {
 			_tables[i].attrs.push_back(AttrInfo());
 			_tables[i].attrs[j].notNull = _tables[i].attrs[j].primary = _tables[i].attrs[j].haveIndex = false;
@@ -105,6 +106,7 @@ void SM_Manager::CloseDB() {
 		metaout << _tables[i].attrNum << "\n";
 		metaout << _tables[i].foreignNum << "\n";
 		metaout << _tables[i].recordSize << "\n";
+		metaout << _tables[i].primarySize << "\n";
 		for (int j = 0; j < _tables[i].attrNum; j++) {
 			metaout << _tables[i].attrs[j].attrName << "\n";
 			metaout << _tables[i].attrs[j].offset << "\n";
@@ -162,6 +164,10 @@ void SM_Manager::CreateTable(TableInfo* table) {
 	}
 	for (int i = 0; i < table->attrNum; i++) {
 		table->attrs[i].offset = recordSize >> 2;
+		if (table->attrs[i].attrType == INTEGER)
+			table->attrs[i].attrLength = 4;
+		if (table->attrs[i].attrType == FLOAT)
+			table->attrs[i].attrLength = 8;
 		int size = table->attrs[i].attrLength;
 		while (size % 4 != 0) size++;
 		recordSize += size;
@@ -195,6 +201,7 @@ void SM_Manager::CreateTable(TableInfo* table) {
 	}
 	_tables.push_back(*table);
 	_tables[_tableNum].recordSize = recordSize;
+	_tables[_tableNum].primarySize = 0;
 	_tables[_tableNum].primary.clear();
 	_tables[_tableNum].foreign.clear();
 	_tables[_tableNum].foreignSet.clear();
@@ -219,6 +226,7 @@ void SM_Manager::CreateTable(TableInfo* table) {
 		for (int i = 0; i < _tables[_tableNum].primary.size(); i++) {
 			primary_size += _tables[_tableNum].attrs[_tables[_tableNum].primary[i]].attrLength;
 		}
+		_tables[_tableNum].primarySize = primary_size;
 		_ixm->CreateIndex(table->tableName.c_str(), "primary", STRING, primary_size);
 	}
 	_tableNum++;
@@ -262,13 +270,13 @@ void SM_Manager::CreateIndex(const string tableName, const vector<string> attrs)
 				fprintf(stderr, "Error: index already exists!\n");
 				return;
 			}
-			_tables[tableID].attrs[i].haveIndex = true;
 			break;
 		}
 		if (!found) {
 			fprintf(stderr, "Error: column does not exist!\n");
 			return;
 		}
+		_tables[tableID].attrs[attrID].haveIndex = true;
 		_ixm->CreateIndex(tableName.c_str(), attr.c_str(), _tables[tableID].attrs[attrID].attrType, _tables[tableID].attrs[attrID].attrLength);
 		int fileID = _tableFileID[tableName];
 		RM_FileHandle *filehandle = new RM_FileHandle(fileManager, bufPageManager, fileID);
@@ -305,13 +313,13 @@ void SM_Manager::DropIndex(const string tableName, const vector<string> attrs) {
 				fprintf(stderr, "Error: index does not exist!\n");
 				return;
 			}
-			_tables[tableID].attrs[i].haveIndex = false;
 			break;
 		}
 		if (!found) {
 			fprintf(stderr, "Error: column does not exist!\n");
 			return;
 		}
+		_tables[tableID].attrs[attrID].haveIndex = false;
 		_ixm->DestroyIndex(tableName.c_str(), attr.c_str());
 	}
 }
@@ -330,4 +338,19 @@ int SM_Manager::_fromNameToID(const string tableName) {
 		if (_tables[i].tableName == tableName)
 			return i;
 	return -1;
+}
+int SM_Manager::_fromNameToID(const string attrName, const int tableID) {
+	for (int i = 0; i < _tables[tableID].attrNum; i++)
+		if (_tables[tableID].attrs[i].attrName == attrName)
+			return i;
+	return -1;
+}
+BufType SM_Manager::_getPrimaryKey(int tableID, BufType data) {
+	BufType primaryKey = new unsigned int[_tables[tableID].primarySize >> 2];
+	int pos = 0;
+	for (int i = 0; i < _tables[tableID].attrNum; i++) if (_tables[tableID].attrs[i].primary) {
+		memcpy(primaryKey + pos, data + _tables[tableID].attrs[i].offset, _tables[tableID].attrs[i].attrLength);
+		pos += (_tables[tableID].attrs[i].attrLength >> 2);
+	}
+	return primaryKey;
 }

@@ -57,6 +57,7 @@ public:
 	
 	bool InsertEntry(void *pData, int pageID, int slotID);
 	bool DeleteEntry(void *pData, int pageID, int slotID);
+	bool CheckEntry(void *pData);
 	
 	IX_TreeNode* _getNode(int id);
 private:
