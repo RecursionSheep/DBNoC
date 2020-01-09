@@ -18,3 +18,9 @@
 加列：列名不重复
 删列：不能被外键挂载，列名是否存在
 修改列：删列+加列
+
+<string>: '<char>*'
+create table <name>(<name> int|float|char(<value>) [not null] [primary key] [references <name> <name>] [default <value>|<string>], ...)
+create index <name>(<name>, ...)
+drop table <name>
+drop index <name>(<name>, ...)

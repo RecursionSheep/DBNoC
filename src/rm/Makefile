@@ -7,7 +7,7 @@ OPT = -O2
 main: $(OBJ)
 
 %.o: %.cpp $(DEPS)
-	$(CC) -c -o $@ $< $(STD11) $(OPT)
+	$(CC) -c -o $@ $< $(STD11)
 
 clean:
 	rm *.o

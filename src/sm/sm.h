@@ -42,6 +42,7 @@ public:
 	// each record is started with 8 bytes containing the NULL bitmap. 1 represents not null and 0 represents null.
 	void OpenDB(const string DBName);
 	void CloseDB();
+	void Show();
 	void CreateTable(TableInfo* table);
 	void DropTable(const string tableName);
 	void CreateIndex(const string tableName, const vector<string> attrs);

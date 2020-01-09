@@ -37,14 +37,16 @@ string readIdentifier() {
 	backward();
 	return id;
 }
-string readIdentifierOrComma() {
+string readIdentifierOrCommaOrBracket() {
 	string id = "";
 	char c;
 	while (1) {
 		c = readChar();
 		if (c == '\0') return "";
 		if (c == ',') return ",";
-		if (c != ' ' && c != '\0' && c != '(' && c != ')') break;
+		if (c == '(') return "(";
+		if (c == ')') return ")";
+		if (c != ' ' && c != '\0') break;
 	}
 	id.push_back(c);
 	while (1) {
@@ -54,7 +56,19 @@ string readIdentifierOrComma() {
 	backward();
 	return id;
 }
-
+string readString() {
+	string id = "";
+	char c;
+	while (1) {
+		c = readChar();
+		if (c == '\'') break;
+	}
+	while (1) {
+		c = readChar();
+		if (c == '\'') break; else id.push_back(c);
+	}
+	return id;
+}
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
@@ -75,18 +89,15 @@ int main(int argc, char **argv) {
 		string cur = readIdentifier();
 		if (cur == "exit") {
 			break;
+		} else if (cur == "show") {
+			smm->Show();
 		} else if (cur == "create") {
-			while ((c = readChar()) == ' ');
-			cur = ""; cur.push_back(c);
-			while (1) {
-				c = readChar();
-				if (c != ' ' && c != '\0') cur.push_back(c); else break;
-			}
+			cur = readIdentifier();
 			if (cur == "index") {
 				string tableName = readIdentifier();
 				vector<string> attrs;
 				while (1) {
-					string attrName == readIdentifier();
+					string attrName = readIdentifier();
 					if (attrName == "") break;
 					attrs.push_back(attrName);
 				}
@@ -94,27 +105,89 @@ int main(int argc, char **argv) {
 			} else if (cur == "table") {
 				string tableName = readIdentifier();
 				TableInfo *tableInfo = new TableInfo(); tableInfo->attrNum = tableInfo->recordSize = 0;
+				tableInfo->tableName = tableName;
 				while (1) {
 					string attrName = readIdentifier();
 					if (attrName == "") break;
 					AttrInfo attrInfo;
 					attrInfo.attrName = attrName;
+					attrInfo.notNull = attrInfo.primary = attrInfo.haveIndex = false;
+					attrInfo.defaultValue = nullptr;
 					string attrType = readIdentifier();
-					if (attrType == "INT")
+					if (attrType == "int")
 						attrInfo.attrType = INTEGER;
-					else if (attrType == "FLOAT")
+					else if (attrType == "float")
 						attrInfo.attrType = FLOAT;
-					else if (attrType == "CHAR") {
+					else if (attrType == "char") {
 						attrInfo.attrType = STRING;
 						string len = readIdentifier();
 						attrInfo.attrLength = atoi(len.c_str());
+						char c = readChar();
+						while (c != ')') c = readChar();
 					}
-					
+					string modifier;
+					while (1) {
+						modifier = readIdentifierOrCommaOrBracket();
+						if (modifier == "," || modifier == "(" || modifier == ")") break;
+						if (modifier == "not") {
+							modifier = readIdentifier();
+							if (modifier == "null") {
+								attrInfo.notNull = true;
+							}
+						}
+						if (modifier == "primary") {
+							modifier = readIdentifier();
+							if (modifier == "key") {
+								attrInfo.primary = true;
+							}
+						}
+						if (modifier == "references") {
+							modifier = readIdentifier();
+							attrInfo.reference = modifier;
+							modifier = readIdentifier();
+							attrInfo.foreignKeyName = modifier;
+						}
+						if (modifier == "default") {
+							if (attrType == "int") {
+								modifier = readIdentifier();
+								int *d = new int; *d = atoi(modifier.c_str());
+								attrInfo.defaultValue = (BufType)d;
+							} else if (attrType == "float") {
+								modifier = readIdentifier();
+								double *d = new double; *d = atof(modifier.c_str());
+								attrInfo.defaultValue = (BufType)d;
+							} else {
+								modifier = readString();
+								char *d = new char[attrInfo.attrLength];
+								memset(d, 0, sizeof(char) * attrInfo.attrLength);
+								memcpy(d, modifier.c_str(), min(attrInfo.attrLength - 1, (int)modifier.length()));
+								attrInfo.defaultValue = (BufType)d;
+							}
+						}
+					}
+					tableInfo->attrs.push_back(attrInfo);
+					tableInfo->attrNum = tableInfo->attrs.size();
 				}
+				smm->CreateTable(tableInfo);
+				delete tableInfo;
+			}
+		} else if (cur == "drop") {
+			cur = readIdentifier();
+			if (cur == "table") {
+				cur = readIdentifier();
+				smm->DropTable(cur);
+			} else if (cur == "index") {
+				string tableName = readIdentifier();
+				vector<string> attrs;
+				while (1) {
+					string attrName = readIdentifier();
+					if (attrName == "") break;
+					attrs.push_back(attrName);
+				}
+				smm->DropIndex(tableName, attrs);
 			}
 		}
 	}
 	smm->CloseDB();
-	delete 
 	return 0;
 }

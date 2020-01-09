@@ -12,6 +12,30 @@ SM_Manager::SM_Manager(IX_Manager *ixm, RM_Manager *rmm, FileManager *_fileManag
 }
 SM_Manager::~SM_Manager() {}
 
+void SM_Manager::Show() {
+	cout << _tableNum << " table(s) in " << _DBName << endl;
+	for (int tableID = 0; tableID < _tableNum; tableID++) {
+		cout << "Table " << _tables[tableID].tableName << ":" << endl;
+		for (int attrID = 0; attrID < _tables[tableID].attrNum; attrID++) {
+			cout << _tables[tableID].attrs[attrID].attrName << " ";
+			if (_tables[tableID].attrs[attrID].attrType == INTEGER) cout << "INT";
+			else if (_tables[tableID].attrs[attrID].attrType == FLOAT) cout << "FLOAT";
+			else if (_tables[tableID].attrs[attrID].attrType == STRING) cout << "CHAR(" << _tables[tableID].attrs[attrID].attrLength << ")";
+			if (_tables[tableID].attrs[attrID].notNull) cout << " NOT NULL";
+			if (_tables[tableID].attrs[attrID].primary) cout << " PRIMARY KEY";
+			if (_tables[tableID].attrs[attrID].defaultValue != nullptr) {
+				if (_tables[tableID].attrs[attrID].attrType == INTEGER) cout << *(int*)_tables[tableID].attrs[attrID].defaultValue;
+				else if (_tables[tableID].attrs[attrID].attrType == FLOAT) cout << *(double*)_tables[tableID].attrs[attrID].defaultValue;
+				else if (_tables[tableID].attrs[attrID].attrType == STRING) cout << "'" << (char*)_tables[tableID].attrs[attrID].defaultValue << "'";
+			}
+			if (_tables[tableID].attrs[attrID].reference != "") {
+				cout << " REFERENCES " << _tables[tableID].attrs[attrID].reference << "(" << _tables[tableID].attrs[attrID].foreignKeyName << ")";
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
+}
 void SM_Manager::OpenDB(const string DBName) {
 	_DBName.assign(DBName);
 	chdir(DBName.c_str());
@@ -142,7 +166,6 @@ void SM_Manager::CloseDB() {
 			}
 			metaout << "END\n";
 		}
-		cout << _tableFileID[_tables[i].tableName] << endl;
 	}
 	metaout.close();
 	for (int i = 0; i < _tableNum; i++) {
@@ -184,6 +207,8 @@ void SM_Manager::CreateTable(TableInfo* table) {
 				if (_tables[j].tableName == table->attrs[i].reference) {
 					for (int k = 0; k < _tables[j].attrNum; k++)
 						if (_tables[j].attrs[k].primary && _tables[j].attrs[k].attrName == table->attrs[i].foreignKeyName) {
+							table->attrs[i].attrType = _tables[j].attrs[k].attrType;
+							table->attrs[i].attrLength = _tables[j].attrs[k].attrLength;
 							ok = true;
 							break;
 						}
