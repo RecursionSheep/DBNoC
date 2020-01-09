@@ -4,8 +4,8 @@ OPT = -O2
 
 main:
 	cd pf && g++ -c -o pf.o pf.cpp
-	cd rm && mingw32-make
-	cd ix && mingw32-make
+	cd rm && make
+	cd ix && make
 	cd sm && g++ -o create create.cpp && g++ -o drop drop.cpp && g++ -c -o sm_manager.o sm_manager.cpp
 	cd ql && g++ -c -o ql_manager.o ql_manager.cpp
 	g++ -c -o use.o use.cpp

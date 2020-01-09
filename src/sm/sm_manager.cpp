@@ -187,10 +187,11 @@ void SM_Manager::CreateTable(TableInfo* table) {
 	}
 	for (int i = 0; i < table->attrNum; i++) {
 		table->attrs[i].offset = recordSize >> 2;
-		if (table->attrs[i].attrType == INTEGER)
+		if (table->attrs[i].attrType == INTEGER) {
 			table->attrs[i].attrLength = 4;
-		if (table->attrs[i].attrType == FLOAT)
+		} else if (table->attrs[i].attrType == FLOAT) {
 			table->attrs[i].attrLength = 8;
+		}
 		int size = table->attrs[i].attrLength;
 		while (size % 4 != 0) size++;
 		recordSize += size;
@@ -269,8 +270,8 @@ void SM_Manager::DropTable(const string tableName) {
 	}
 	if (!_rmm->CloseFile(_tableFileID[_tables[tableID].tableName]))
 		fprintf(stderr, "Error: failed to close table file!\n");
-	system(("del " + _tables[tableID].tableName).c_str());
-	system(("del " + _tables[tableID].tableName + ".*").c_str());
+	_rmm->DestroyFile(_tables[tableID].tableName.c_str());
+	system(("rm " + _tables[tableID].tableName + ".*").c_str());
 	_tables.erase(_tables.begin() + tableID);
 	_tableNum--;
 }

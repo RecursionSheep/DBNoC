@@ -77,5 +77,6 @@ int main() {
 	if (rec.size() > 0) puts("failed");
 	fprintf(stderr, "%d\n", handle->_header.pageNumber);
 	rmm->CloseFile(fileID);
+	system("del test");
 	return 0;
 }

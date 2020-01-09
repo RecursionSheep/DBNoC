@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
 		cerr << "Usage: " << argv[0] << " DBName\n";
 		return 1;
 	}
+	MyBitMap::initConst();
 	FileManager *fileManager = new FileManager();
 	BufPageManager *bufPageManager = new BufPageManager(fileManager);
 	RM_Manager *rmm = new RM_Manager(fileManager, bufPageManager);
@@ -114,11 +115,11 @@ int main(int argc, char **argv) {
 					attrInfo.notNull = attrInfo.primary = attrInfo.haveIndex = false;
 					attrInfo.defaultValue = nullptr;
 					string attrType = readIdentifier();
-					if (attrType == "int")
+					if (attrType == "int") {
 						attrInfo.attrType = INTEGER;
-					else if (attrType == "float")
+					} else if (attrType == "float") {
 						attrInfo.attrType = FLOAT;
-					else if (attrType == "char") {
+					} else if (attrType == "char") {
 						attrInfo.attrType = STRING;
 						string len = readIdentifier();
 						attrInfo.attrLength = atoi(len.c_str());
@@ -169,7 +170,7 @@ int main(int argc, char **argv) {
 					tableInfo->attrNum = tableInfo->attrs.size();
 				}
 				smm->CreateTable(tableInfo);
-				delete tableInfo;
+				//delete tableInfo;
 			}
 		} else if (cur == "drop") {
 			cur = readIdentifier();

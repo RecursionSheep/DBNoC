@@ -18,7 +18,7 @@ private:
 	int _createFile(const char* name) {
 		FILE* f = fopen(name, "a+");
 		if (f == NULL) {
-			cout << "fail" << endl;
+			cout << "paged file: create file failed" << endl;
 			return -1;
 		}
 		fclose(f);
@@ -116,6 +116,10 @@ public:
 		fileID = fm->findLeftOne();
 		fm->setBit(fileID, 0);
 		_openFile(name, fileID);
+		if (fileID == -1) {
+			cout << "paged file: open file failed" << endl;
+			return false;
+		}
 		return true;
 	}
 	int newType() {

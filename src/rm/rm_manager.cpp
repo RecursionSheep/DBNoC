@@ -25,20 +25,24 @@ bool RM_Manager::CreateFile(const char *fileName, int recordSize) {
 	memcpy(buf, &header, sizeof(RM_FileHeader));
 	bufPageManager->markDirty(index);
 	bufPageManager->writeBack(index);
+	
+	//cout << "fileID: " << fileID << endl;
 	fileManager->closeFile(fileID);
 	return true;
 }
 bool RM_Manager::DestroyFile(const char *fileName) {
 	bufPageManager->close();
-	system(("del " + std::string(fileName, fileName + strlen(fileName))).c_str());
+	system(("rm " + std::string(fileName, fileName + strlen(fileName))).c_str());
 	return true;
 }
 bool RM_Manager::OpenFile(const char *fileName, int &fileID) {
 	if (!fileManager->openFile(fileName, fileID)) return false;
+	//cout << "fileID: " << fileID << endl;
 	return true;
 }
 bool RM_Manager::CloseFile(int fileID) {
 	bufPageManager->close();
+	//cout << "fileID: " << fileID << endl;
 	if (fileManager->closeFile(fileID)) return false;
 	return true;
 }

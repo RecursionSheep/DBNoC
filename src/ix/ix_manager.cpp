@@ -52,21 +52,24 @@ bool IX_Manager::CreateIndex(const char *fileName, const char *attrName, AttrTyp
 	bufPageManager->markDirty(pageIndex);
 	bufPageManager->writeBack(pageIndex);
 	
+	//cout << "fileID: " << fileID << endl;
 	fileManager->closeFile(fileID);
 	return true;
 }
 bool IX_Manager::DestroyIndex(const char *fileName, const char *attrName) {
 	bufPageManager->close();
-	system(("del " + std::string(fileName, fileName + strlen(fileName)) + "." + std::string(attrName, attrName + strlen(attrName))).c_str());
+	system(("rm " + std::string(fileName, fileName + strlen(fileName)) + "." + std::string(attrName, attrName + strlen(attrName))).c_str());
 	return true;
 }
 bool IX_Manager::OpenIndex(const char *fileName, const char *attrName, int &fileID) {
 	std::string indexName = string(fileName, fileName + strlen(fileName)) + "." + string(attrName, attrName + strlen(attrName));
 	if (!fileManager->openFile(indexName.c_str(), fileID)) return false;
+	//cout << "fileID: " << fileID << endl;
 	return true;
 }
 bool IX_Manager::CloseIndex(int fileID) {
 	if (fileManager->closeFile(fileID)) return false;
+	//cout << "fileID: " << fileID << endl;
 	return true;
 }
 
