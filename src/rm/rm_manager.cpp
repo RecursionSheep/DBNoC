@@ -1,5 +1,7 @@
 #include "rm.h"
 #include <cstring>
+#include <cstdlib>
+#include <string>
 
 RM_Manager::RM_Manager(FileManager *_fileManager, BufPageManager *_bufPageManager) {
 	fileManager = _fileManager; bufPageManager = _bufPageManager;
@@ -27,7 +29,9 @@ bool RM_Manager::CreateFile(const char *fileName, int recordSize) {
 	return true;
 }
 bool RM_Manager::DestroyFile(const char *fileName) {
-	// todo
+	bufPageManager->close();
+	system(("del " + std::string(fileName, fileName + strlen(fileName))).c_str());
+	return true;
 }
 bool RM_Manager::OpenFile(const char *fileName, int &fileID) {
 	if (!fileManager->openFile(fileName, fileID)) return false;

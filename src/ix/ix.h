@@ -38,10 +38,10 @@ public:
 	~IX_Manager();
 	
 	// attrLen Bytes
-	bool CreateIndex(const char *fileName, int indexID, AttrType attrType, int attrLen);
-	bool DestroyIndex(const char *fileName, int indexID);
-	bool OpenIndex(const char *fileName, int indexID, int &fileID);
-	bool CloseIndex(int indexID, int fileID);
+	bool CreateIndex(const char *fileName, const char *attrName, AttrType attrType, int attrLen);
+	bool DestroyIndex(const char *fileName, const char *attrName);
+	bool OpenIndex(const char *fileName, const char *attrName, int &fileID);
+	bool CloseIndex(int fileID);
 
 private:
 	bool _GetIndexFileName(const char *fileName, int indexID, std::string &indexName);
@@ -52,7 +52,7 @@ public:
 	FileManager *fileManager;
 	BufPageManager *bufPageManager;
 	
-	IX_IndexHandle(FileManager *_fileManager, BufPageManager *_bufPageManager, int indexID, int fileID);
+	IX_IndexHandle(FileManager *_fileManager, BufPageManager *_bufPageManager, int fileID);
 	~IX_IndexHandle();
 	
 	bool InsertEntry(void *pData, int pageID, int slotID);
@@ -62,7 +62,7 @@ public:
 private:
 	void _writeBackNode(IX_TreeNode* node);
 	
-	int _indexID, _fileID;
+	int _fileID;
 	IX_FileHeader _header;
 };
 
@@ -71,7 +71,7 @@ public:
 	FileManager *fileManager;
 	BufPageManager *bufPageManager;
 	
-	IX_IndexScan(FileManager *_fileManager, BufPageManager *_bufPageManager, int indexID, int fileID);
+	IX_IndexScan(FileManager *_fileManager, BufPageManager *_bufPageManager, int fileID);
 	~IX_IndexScan();
 	
 	bool OpenScan(void *pData, bool lower);
@@ -85,7 +85,7 @@ private:
 	void _writeBackNode(IX_TreeNode* node);
 	
 	IX_FileHeader _header;
-	int _indexID, _fileID;
+	int _fileID;
 };
 
 bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int slot2, AttrType attrType);

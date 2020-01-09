@@ -10,11 +10,11 @@ int main() {
 	FileManager *fileManager = new FileManager();
 	BufPageManager *bufPageManager = new BufPageManager(fileManager);
 	IX_Manager *ixm = new IX_Manager(fileManager, bufPageManager);
-	ixm->CreateIndex("test", 1, FLOAT, 8);
+	ixm->CreateIndex("test", "a", FLOAT, 8);
 	int fileID;
 	fprintf(stderr, "ok\n");
-	ixm->OpenIndex("test", 1, fileID);
-	IX_IndexHandle *index = new IX_IndexHandle(fileManager, bufPageManager, 1, fileID);
+	ixm->OpenIndex("test", "a", fileID);
+	IX_IndexHandle *index = new IX_IndexHandle(fileManager, bufPageManager, fileID);
 	
 	for (int i = 1; i <= 10000; i++) {
 		double x = (rand() % 2000) / 1000.0;
@@ -33,7 +33,7 @@ int main() {
 		x = (rand() % 2000) / 1000.0;
 		fprintf(stderr, "Query %.3lf\n", x);
 		auto it = s.lower_bound(make_pair(x, make_pair(-1, -1)));
-		IX_IndexScan *scan = new IX_IndexScan(fileManager, bufPageManager, 1, fileID);
+		IX_IndexScan *scan = new IX_IndexScan(fileManager, bufPageManager, fileID);
 		scan->OpenScan(&x, true);
 		//fprintf(stderr, "set %.3lf\n", (*it).first);
 		while (it != s.end()) {
@@ -48,7 +48,7 @@ int main() {
 		//fprintf(stderr, "\n");
 	}
 	bufPageManager->close();
-	ixm->CloseIndex(1, fileID);
+	ixm->CloseIndex(fileID);
 	fprintf(stderr, "close\n");
 	return 0;
 }

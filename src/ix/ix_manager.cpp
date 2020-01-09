@@ -1,6 +1,8 @@
 #include "ix.h"
 #include <sstream>
+#include <cstdlib>
 #include <cstring>
+#include <string>
 
 IX_Manager::IX_Manager(FileManager *_fileManager, BufPageManager *_bufPageManager) {
 	fileManager = _fileManager; bufPageManager = _bufPageManager;
@@ -17,9 +19,8 @@ bool IX_Manager::_GetIndexFileName(const char *fileName, int indexID, std::strin
 	return true;
 }
 
-bool IX_Manager::CreateIndex(const char *fileName, int indexID, AttrType attrType, int attrLen) {
-	std::string indexName;
-	_GetIndexFileName(fileName, indexID, indexName);
+bool IX_Manager::CreateIndex(const char *fileName, const char *attrName, AttrType attrType, int attrLen) {
+	std::string indexName = std::string(fileName, fileName + strlen(fileName)) + "." + std::string(attrName, attrName + strlen(attrName));
 	if (!fileManager->createFile(indexName.c_str())) return false;
 	int fileID;
 	if (!fileManager->openFile(indexName.c_str(), fileID)) return false;
@@ -39,7 +40,7 @@ bool IX_Manager::CreateIndex(const char *fileName, int indexID, AttrType attrTyp
 	BufType buf = bufPageManager->getPage(fileID, 0, index);
 	memcpy(buf, &header, sizeof(IX_FileHeader));
 	bufPageManager->markDirty(index);
-	//bufPageManager->writeBack(index);
+	bufPageManager->writeBack(index);
 	
 	IX_PageHeader pageHeader;
 	pageHeader.isLeaf = true;
@@ -49,19 +50,22 @@ bool IX_Manager::CreateIndex(const char *fileName, int indexID, AttrType attrTyp
 	BufType pageBuf = bufPageManager->getPage(fileID, 1, pageIndex);
 	memcpy(pageBuf, &pageHeader, sizeof(IX_PageHeader));
 	bufPageManager->markDirty(pageIndex);
-	//bufPageManager->writeBack(pageIndex);
+	bufPageManager->writeBack(pageIndex);
+	
+	fileManager->closeFile(fileID);
 	return true;
 }
-bool IX_Manager::DestroyIndex(const char *fileName, int indexID) {
-	// todo
+bool IX_Manager::DestroyIndex(const char *fileName, const char *attrName) {
+	bufPageManager->close();
+	system(("del " + std::string(fileName, fileName + strlen(fileName)) + "." + std::string(attrName, attrName + strlen(attrName))).c_str());
+	return true;
 }
-bool IX_Manager::OpenIndex(const char *fileName, int indexID, int &fileID) {
-	std::string indexName;
-	_GetIndexFileName(fileName, indexID, indexName);
+bool IX_Manager::OpenIndex(const char *fileName, const char *attrName, int &fileID) {
+	std::string indexName = string(fileName, fileName + strlen(fileName)) + "." + string(attrName, attrName + strlen(attrName));
 	if (!fileManager->openFile(indexName.c_str(), fileID)) return false;
 	return true;
 }
-bool IX_Manager::CloseIndex(int indexID, int fileID) {
+bool IX_Manager::CloseIndex(int fileID) {
 	if (fileManager->closeFile(fileID)) return false;
 	return true;
 }

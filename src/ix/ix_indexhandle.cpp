@@ -1,9 +1,9 @@
 #include "ix.h"
 #include <cstring>
 
-IX_IndexHandle::IX_IndexHandle(FileManager *_fileManager, BufPageManager *_bufPageManager, int indexID, int fileID) {
+IX_IndexHandle::IX_IndexHandle(FileManager *_fileManager, BufPageManager *_bufPageManager, int fileID) {
 	fileManager = _fileManager; bufPageManager = _bufPageManager;
-	_indexID = indexID; _fileID = fileID;
+	_fileID = fileID;
 	int index0;
 	BufType data0 = bufPageManager->getPage(_fileID, 0, index0);
 	memcpy(&_header, data0, sizeof(IX_FileHeader));
