@@ -24,9 +24,9 @@ void SM_Manager::Show() {
 			if (_tables[tableID].attrs[attrID].notNull) cout << " NOT NULL";
 			if (_tables[tableID].attrs[attrID].primary) cout << " PRIMARY KEY";
 			if (_tables[tableID].attrs[attrID].defaultValue != nullptr) {
-				if (_tables[tableID].attrs[attrID].attrType == INTEGER) cout << *(int*)_tables[tableID].attrs[attrID].defaultValue;
-				else if (_tables[tableID].attrs[attrID].attrType == FLOAT) cout << *(double*)_tables[tableID].attrs[attrID].defaultValue;
-				else if (_tables[tableID].attrs[attrID].attrType == STRING) cout << "'" << (char*)_tables[tableID].attrs[attrID].defaultValue << "'";
+				if (_tables[tableID].attrs[attrID].attrType == INTEGER) cout << " DEFAULT " << *(int*)_tables[tableID].attrs[attrID].defaultValue;
+				else if (_tables[tableID].attrs[attrID].attrType == FLOAT) cout << " DEFAULT " << *(double*)_tables[tableID].attrs[attrID].defaultValue;
+				else if (_tables[tableID].attrs[attrID].attrType == STRING) cout << " DEFAULT '" << (char*)_tables[tableID].attrs[attrID].defaultValue << "'";
 			}
 			if (_tables[tableID].attrs[attrID].reference != "") {
 				cout << " REFERENCES " << _tables[tableID].attrs[attrID].reference << "(" << _tables[tableID].attrs[attrID].foreignKeyName << ")";

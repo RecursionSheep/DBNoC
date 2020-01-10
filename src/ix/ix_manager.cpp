@@ -68,6 +68,7 @@ bool IX_Manager::OpenIndex(const char *fileName, const char *attrName, int &file
 	return true;
 }
 bool IX_Manager::CloseIndex(int fileID) {
+	bufPageManager->close();
 	if (fileManager->closeFile(fileID)) return false;
 	//cout << "fileID: " << fileID << endl;
 	return true;

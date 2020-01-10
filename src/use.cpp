@@ -15,7 +15,10 @@ using namespace std;
 int pos;
 string command;
 char readChar() {
-	if (pos == command.length()) return '\0';
+	if (pos == command.length()) {
+		pos++;
+		return '\0';
+	}
 	return command[pos++];
 }
 void backward() {
@@ -42,16 +45,15 @@ string readIdentifierOrCommaOrBracket() {
 	char c;
 	while (1) {
 		c = readChar();
-		if (c == '\0') return "";
-		if (c == ',') return ",";
-		if (c == '(') return "(";
-		if (c == ')') return ")";
+		if (c == '\0' || c == ',' || c == '(' || c == ')') {
+			id.push_back(c); return id;
+		}
 		if (c != ' ' && c != '\0') break;
 	}
 	id.push_back(c);
 	while (1) {
 		c = readChar();
-		if (c != ' ' && c != '\0' && c != ',' && c != '(' && c != ')') id.push_back(c); else break;
+		if (c != ' ' && c != '\0' && c != ',' && c != '(' && c != ')' && c != '=') id.push_back(c); else break;
 	}
 	backward();
 	return id;
@@ -68,6 +70,34 @@ string readString() {
 		if (c == '\'') break; else id.push_back(c);
 	}
 	return id;
+}
+string readValue(AttrType *type) {
+	string val = "";
+	char c;
+	while (1) {
+		c = readChar();
+		if (c == '\0') return "";
+		if (c != ' ' && c != '\0' && c != ',' && c != '(') {
+			break;
+		}
+	}
+	if (c == ')') {
+		backward();
+		return ")";
+	}
+	if (c == '\'') {
+		*type = STRING;
+	} else {
+		val.push_back(c);
+		*type = INTEGER;
+	}
+	while (1) {
+		c = readChar();
+		if (*type != STRING && (c == '.' || c == 'e')) *type = FLOAT;
+		if (c != ' ' && c != '\0' && c != ',' && c != '(' && c != ')' && c != '\'') val.push_back(c); else break;
+	}
+	if (c != '\'') backward();
+	return val;
 }
 
 int main(int argc, char **argv) {
@@ -157,7 +187,7 @@ int main(int argc, char **argv) {
 								modifier = readIdentifier();
 								double *d = new double; *d = atof(modifier.c_str());
 								attrInfo.defaultValue = (BufType)d;
-							} else {
+							} else if (attrType == "char") {
 								modifier = readString();
 								char *d = new char[attrInfo.attrLength];
 								memset(d, 0, sizeof(char) * attrInfo.attrLength);
@@ -187,6 +217,235 @@ int main(int argc, char **argv) {
 				}
 				smm->DropIndex(tableName, attrs);
 			}
+		} else if (cur == "insert") {
+			cur = readIdentifier();
+			if (cur != "into") continue;
+			string tableName = readIdentifier();
+			vector<string> attrs;
+			vector<BufType> datas;
+			while (1) {
+				string attr = readIdentifierOrCommaOrBracket();
+				if (attr == "(") continue;
+				if (attr == ")") break;
+				if (attr == ",") continue;
+				//cout << attr << endl;
+				attrs.push_back(attr);
+			}
+			cur = readIdentifier();
+			//cout << cur << endl;
+			if (cur == "values") {
+				while (1) {
+					AttrType type;
+					string value = readValue(&type);
+					//cout << pos << endl;
+					if (value == ")") break;
+					//cout << value << endl;
+					if (type == INTEGER) {
+						int *d = new int; *d = atoi(value.c_str());
+						datas.push_back((BufType)d);
+					} else if (type == FLOAT) {
+						double *d = new double; *d = atof(value.c_str());
+						datas.push_back((BufType)d);
+					} else if (type == STRING) {
+						char *d = new char[value.length() + 1];
+						memset(d, 0, sizeof(char) * (value.length() + 1));
+						memcpy(d, value.c_str(), value.length());
+						datas.push_back((BufType)d);
+					}
+				}
+				qlm->Insert(tableName, attrs, datas);
+			}
+		} else if (cur == "update") {
+			string tableName = readIdentifier();
+			cur = readIdentifier();
+			if (cur == "set") {
+				string attr = readIdentifier();
+				char c;
+				while (1) {
+					c = readChar();
+					if (c == '=') break;
+					if (c == '\0') break;
+				}
+				if (c == '=') {
+					AttrType type;
+					string value = readValue(&type);
+					Assign assign;
+					assign.table = tableName; assign.attr = attr;
+					if (type == INTEGER) {
+						int *d = new int; *d = atoi(value.c_str());
+						assign.value = (BufType)d;
+					} else if (type == FLOAT) {
+						double *d = new double; *d = atof(value.c_str());
+						assign.value = (BufType)d;
+					} else if (type == STRING) {
+						char *d = new char[value.length() + 1];
+						memset(d, 0, sizeof(char) * (value.length() + 1));
+						memcpy(d, value.c_str(), value.length());
+						assign.value = (BufType)d;
+					}
+					qlm->Update(assign);
+				}
+			}
+		} else if (cur == "delete") {
+			cur = readIdentifier();
+			if (cur != "from") continue;
+			string tableName = readIdentifier();
+			cur = readIdentifier();
+			if (cur == "where") {
+				vector<Relation> relations;
+				while (1) {
+					Relation relation;
+					cur = readIdentifier();
+					if (cur == "") break;
+					if (cur == "and") continue;
+					int pos = cur.find('.');
+					if (pos == string::npos) {
+						relation.table1 = tableName;
+						relation.attr1 = cur;
+					} else {
+						relation.table1 = cur.substr(0, pos);
+						relation.attr1 = cur.substr(pos + 1);
+					}
+					cur = readIdentifier();
+					if (cur == "<") relation.op = LT_OP;
+					else if (cur == ">") relation.op = GT_OP;
+					else if (cur == "<=") relation.op = LE_OP;
+					else if (cur == ">=") relation.op = GE_OP;
+					else if (cur == "==") relation.op = EQ_OP;
+					else if (cur == "<>") relation.op = NE_OP;
+					char c;
+					while (1) {
+						c = readChar();
+						if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) break;
+						if (c == '\'') break;
+						if (c >= '0' && c <= '9') break;
+					}
+					backward();
+					if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+						cur = readIdentifier();
+						int pos = cur.find('.');
+						if (pos == string::npos) {
+							relation.table2 = tableName;
+							relation.attr2 = cur;
+						} else {
+							relation.table2 = cur.substr(0, pos);
+							relation.attr2 = cur.substr(pos + 1);
+						}
+						relation.data = nullptr;
+					} else {
+						AttrType type;
+						string value = readValue(&type);
+						if (value == ")") break;
+						if (type == INTEGER) {
+							int *d = new int; *d = atoi(value.c_str());
+							relation.data = (BufType)d;
+						} else if (type == FLOAT) {
+							double *d = new double; *d = atof(value.c_str());
+							relation.data = (BufType)d;
+						} else if (type == STRING) {
+							char *d = new char[value.length() + 1];
+							memset(d, 0, sizeof(char) * (value.length() + 1));
+							memcpy(d, value.c_str(), value.length());
+							relation.data = (BufType)d;
+						}
+					}
+					relations.push_back(relation);
+				}
+				qlm->Delete(tableName, relations);
+			}
+		} else if (cur == "select") {
+			vector<string> attrs, tables;
+			string attr;
+			while (1) {
+				attr = readIdentifier();
+				//cout << attr << endl;
+				if (attr == "from") break;
+				attrs.push_back(attr);
+			}
+			if (attr == "from") {
+				string table = readIdentifier();
+				//cout << table << endl;
+				tables.push_back(table);
+				table = readIdentifierOrCommaOrBracket();
+				//cout << table << endl;
+				if (table == ",") {
+					table = readIdentifier();
+					//cout << table << endl;
+					tables.push_back(table);
+					table = readIdentifier();
+					//cout << table << endl;
+				}
+				if (table == "where") {
+					vector<Relation> relations;
+					while (1) {
+						Relation relation;
+						cur = readIdentifier();
+						//cout << cur << endl;
+						if (cur == "") break;
+						if (cur == "and") continue;
+						int pos = cur.find('.');
+						if (pos == string::npos) {
+							relation.table1 = tables[0];
+							relation.attr1 = cur;
+						} else {
+							relation.table1 = cur.substr(0, pos);
+							relation.attr1 = cur.substr(pos + 1);
+						}
+						cur = readIdentifier();
+						//cout << cur << endl;
+						if (cur == "<") relation.op = LT_OP;
+						else if (cur == ">") relation.op = GT_OP;
+						else if (cur == "<=") relation.op = LE_OP;
+						else if (cur == ">=") relation.op = GE_OP;
+						else if (cur == "==") relation.op = EQ_OP;
+						else if (cur == "<>") relation.op = NE_OP;
+						char c;
+						while (1) {
+							c = readChar();
+							if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) break;
+							if (c == '\'') break;
+							if (c >= '0' && c <= '9') break;
+						}
+						backward();
+						if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+							cur = readIdentifier();
+							//cout << cur << endl;
+							int pos = cur.find('.');
+							if (pos == string::npos) {
+								relation.table2 = tables[0];
+								relation.attr2 = cur;
+							} else {
+								relation.table2 = cur.substr(0, pos);
+								relation.attr2 = cur.substr(pos + 1);
+							}
+							relation.data = nullptr;
+						} else {
+							AttrType type;
+							string value = readValue(&type);
+							//cout << value << endl;
+							if (value == "") break;
+							if (type == INTEGER) {
+								int *d = new int; *d = atoi(value.c_str());
+								relation.data = (BufType)d;
+							} else if (type == FLOAT) {
+								double *d = new double; *d = atof(value.c_str());
+								relation.data = (BufType)d;
+							} else if (type == STRING) {
+								char *d = new char[value.length() + 1];
+								memset(d, 0, sizeof(char) * (value.length() + 1));
+								memcpy(d, value.c_str(), value.length());
+								relation.data = (BufType)d;
+							}
+						}
+						relations.push_back(relation);
+					}
+					qlm->Select(tables[0], relations, attrs);
+				}
+			}
+		} else if (cur == "load") {
+			string tableName = readIdentifier();
+			string fileName = readIdentifier();
+			qlm->Load(tableName, fileName);
 		}
 	}
 	smm->CloseDB();

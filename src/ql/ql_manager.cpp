@@ -73,6 +73,7 @@ void QL_Manager::Insert(const string tableName, vector<string> attrs, vector<Buf
 				size = _smm->_tables[tableID].attrs[attrID].attrLength;
 				ddd[size - 1] = '\0';
 			}
+			puts((char*)data + _smm->_tables[tableID].attrs[attrID].offset);
 			memcpy(data + _smm->_tables[tableID].attrs[attrID].offset, ddd, size);
 		}
 	}
@@ -146,6 +147,7 @@ void QL_Manager::Insert(const string tableName, vector<string> attrs, vector<Buf
 	int fileID = _smm->_tableFileID[tableName];
 	RM_FileHandle *filehandle = new RM_FileHandle(fileManager, bufPageManager, fileID);
 	filehandle->InsertRec(pageID, slotID, data);
+	fprintf(stderr, "Insert record to %d %d\n", pageID, slotID);
 	if (primary_size != 0) {
 		int indexID;
 		_ixm->OpenIndex(tableName.c_str(), "primary", indexID);
@@ -436,14 +438,15 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 			for (int i = 0; i < attrIDs.size(); i++) {
 				BufType out = data + _smm->_tables[tableID].attrs[attrIDs[i]].offset;
 				if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == INTEGER) {
-					printf(" %d ", *(int*)out);
+					printf(" INT %d ", *(int*)out);
 				} else if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == FLOAT) {
-					printf(" %.6lf ", *(double*)out);
+					printf(" FLOAT %.6lf ", *(double*)out);
 				} else if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == STRING) {
-					printf(" %s ", (char*)out);
+					printf(" STRING %s ", (char*)out);
 				}
-				putchar('\n');
+				putchar('|');
 			}
+			putchar('\n');
 		}
 		delete data;
 		if (!hasNext) break;

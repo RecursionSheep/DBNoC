@@ -260,7 +260,9 @@ bool IX_IndexHandle::CheckEntry(void *pData) {
 			if (!flag) id = node->child[0];
 		} else {
 			int _entry = -1;
+			//printf("keynum %d\n", node->header.keyNum);
 			for (int i = 0; i < node->header.keyNum; i++) {
+				//printf("%d %d\n", *(int*)pData, *(int*)node->key + i * _header.attrLen);
 				if (memcmp(pData, node->key + i * _header.attrLen, _header.attrLen) == 0) {
 					_entry = i;
 					break;

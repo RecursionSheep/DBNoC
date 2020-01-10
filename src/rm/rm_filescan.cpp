@@ -29,6 +29,10 @@ bool RM_FileScan::GetNextRecord(int &pageID, int &slotID, BufType data) {
 	BufType buf = bufPageManager->getPage(_fileID, _pageID, index);
 	bufPageManager->access(index);
 	BufType bitmap = buf + _filehandle->_header.bitmapStart;
+	pageID = _pageID; slotID = _slotID;
+	buf = bitmap + _filehandle->_header.bitmapSize + slotID * _filehandle->_header.recordSize;
+	memcpy(data, buf, _filehandle->_header.recordSize * sizeof(uint));
+	_slotID++;
 	while ((_pageID < _filehandle->_header.pageNumber) && (_filehandle->_getNextOne(bitmap, _filehandle->_header.recordNumPerPage, _slotID) == -1)) {
 		_pageID++;
 		_slotID = 0;
@@ -36,10 +40,7 @@ bool RM_FileScan::GetNextRecord(int &pageID, int &slotID, BufType data) {
 		bufPageManager->access(index);
 		bitmap = buf + _filehandle->_header.bitmapStart;
 	}
+	//cout << _pageID << ' ' << _slotID << ' ' << _filehandle->_header.pageNumber << endl;
 	if (_pageID >= _filehandle->_header.pageNumber) return false;
-	pageID = _pageID; slotID = _filehandle->_getNextOne(bitmap, _filehandle->_header.recordNumPerPage, _slotID);
-	_slotID = slotID + 1;
-	buf = bitmap + _filehandle->_header.bitmapSize + slotID * _filehandle->_header.recordSize;
-	memcpy(data, buf, _filehandle->_header.recordSize * sizeof(uint));
 	return true;
 }

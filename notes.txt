@@ -7,6 +7,12 @@
 属性offset
 属性信息 not null primary key default foreign key
 
+create table table1(a int primary key not null, b char(10), c float default 1.23)
+insert into table1(a, b) values (12, 'abc')
+insert into table1(a, b, c) values(13, 'abcde', 2.24)
+select a, b, c from table1 where a > 0
+insert into table1(a, b) values (12, 'abc')
+
 建表：主键唯一，外键是合法属性，主键必须not null，表名不重复
 删表：是否有外键挂载，表名是否存在
 建索引：必须not null
@@ -19,8 +25,16 @@
 删列：不能被外键挂载，列名是否存在
 修改列：删列+加列
 
+运算符左右须有空格
+标识符以字母开头
 <string>: '<char>*'
 create table <name>(<name> int|float|char(<value>) [not null] [primary key] [references <name> <name>] [default <value>|<string>], ...)
 create index <name>(<name>, ...)
 drop table <name>
 drop index <name>(<name>, ...)
+
+insert into <name>(<name>, ...) values (<value>, ...)
+update <name> set <name> = <value>
+delete from <name> where <name> <|>|==|<>|<=|>= <name>|<value> and ...
+select <name>.<name>, ... from <name>[, <name>] where <name> <|>|==|<>|<=|>= <name>|<value> and ...
+load <name> <file>
