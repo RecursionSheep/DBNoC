@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 	smm->OpenDB(string(argv[1], argv[1] + strlen(argv[1])));
 	while (1) {
 		pos = 0;
-		//putchar('>');
+		putchar('>');
 		if (!getline(cin, command)) break;
 		//cout << command << endl;
 		string cur = readIdentifier();

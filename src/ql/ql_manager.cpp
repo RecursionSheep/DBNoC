@@ -340,8 +340,10 @@ void QL_Manager::Delete(const string tableName, vector<Relation> relations) {
 		delete data;
 		if (!hasNext) break;
 	}
-	_ixm->CloseIndex(primaryIndex);
-	if (primaryIndex != -1) delete primaryhandle;
+	if (primaryIndex != -1) {
+		_ixm->CloseIndex(primaryIndex);
+		delete primaryhandle;
+	}
 	for (int i = 0; i < handles.size(); i++) {
 		_ixm->CloseIndex(indexes[i]);
 		delete handles[i];
