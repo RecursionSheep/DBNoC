@@ -304,19 +304,24 @@ void SM_Manager::CreateIndex(const string tableName, const vector<string> attrs)
 		}
 		_tables[tableID].attrs[attrID].haveIndex = true;
 		_ixm->CreateIndex(tableName.c_str(), attr.c_str(), _tables[tableID].attrs[attrID].attrType, _tables[tableID].attrs[attrID].attrLength);
+		cout << "create index" << endl;
 		int fileID = _tableFileID[tableName];
 		RM_FileHandle *filehandle = new RM_FileHandle(fileManager, bufPageManager, fileID);
 		RM_FileScan *filescan = new RM_FileScan(fileManager, bufPageManager);
 		if (!filescan->OpenScan(filehandle)) return;
+		cout << "open file scan" << endl;
 		int indexID;
 		_ixm->OpenIndex(tableName.c_str(), attr.c_str(), indexID);
 		IX_IndexHandle *indexhandle = new IX_IndexHandle(fileManager, bufPageManager, indexID);
+		cout << "open index" << endl;
 		while (1) {
 			int pageID, slotID;
-			BufType data;
+			BufType data = new unsigned int[filehandle->_header.recordSize];
 			bool scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
-			data = data + _tables[tableID].attrs[attrID].offset;
-			indexhandle->InsertEntry((void*)data, pageID, slotID);
+			BufType insertData = data + _tables[tableID].attrs[attrID].offset;
+			cout << pageID << " " << slotID << " " << *(int*)insertData << endl;
+			indexhandle->InsertEntry((void*)insertData, pageID, slotID);
+			delete [] data;
 			if (!scanNotEnd) break;
 		}
 		delete filescan, filehandle, indexhandle;

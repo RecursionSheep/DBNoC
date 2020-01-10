@@ -93,6 +93,12 @@ string readValue(AttrType *type) {
 	}
 	while (1) {
 		c = readChar();
+		if (*type == STRING) {
+			if (c == '\'') break; else {
+				val.push_back(c);
+				continue;
+			}
+		}
 		if (*type != STRING && (c == '.' || c == 'e')) *type = FLOAT;
 		if (c != ' ' && c != '\0' && c != ',' && c != '(' && c != ')' && c != '\'') val.push_back(c); else break;
 	}
