@@ -147,7 +147,7 @@ void QL_Manager::Insert(const string tableName, vector<string> attrs, vector<Buf
 	int fileID = _smm->_tableFileID[tableName];
 	RM_FileHandle *filehandle = new RM_FileHandle(fileManager, bufPageManager, fileID);
 	filehandle->InsertRec(pageID, slotID, data);
-	fprintf(stderr, "Insert record to %d %d\n", pageID, slotID);
+	//fprintf(stderr, "Insert record to %d %d\n", pageID, slotID);
 	if (primary_size != 0) {
 		int indexID;
 		_ixm->OpenIndex(tableName.c_str(), "primary", indexID);
@@ -435,8 +435,15 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 		}
 		if (ok) {
 			putchar('|');
+			unsigned long long *bitmap = (unsigned long long*)data;
+			//cout << " bitmap: " << bitmap[0] << " |";
 			for (int i = 0; i < attrIDs.size(); i++) {
 				BufType out = data + _smm->_tables[tableID].attrs[attrIDs[i]].offset;
+				//cout << " " << (bitmap[0] & (1ull << attrIDs[i])) << " ";
+				if ((bitmap[0] & (1ull << attrIDs[i])) == 0) {
+					printf(" NULL |");
+					continue;
+				}
 				if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == INTEGER) {
 					printf(" INT %d ", *(int*)out);
 				} else if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == FLOAT) {
@@ -471,6 +478,7 @@ void QL_Manager::Load(const string tableName, const string fileName) {
 		attrs.push_back(_smm->_tables[tableID].attrs[i].attrName);
 	}
 	//cout << tableName << endl;
+	cout << "loading ..." << endl;
 	while (getline(load, str)) {
 		vector<BufType> values;
 		string buf = "";
@@ -501,6 +509,7 @@ void QL_Manager::Load(const string tableName, const string fileName) {
 		Insert(tableName, attrs, values);
 	}
 	load.close();
+	cout << "done." << endl;
 }
 
 bool QL_Manager::_compare(BufType data1, BufType data2, CompOp op, AttrType type) {

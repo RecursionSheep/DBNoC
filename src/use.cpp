@@ -122,7 +122,9 @@ int main(int argc, char **argv) {
 	smm->OpenDB(string(argv[1], argv[1] + strlen(argv[1])));
 	while (1) {
 		pos = 0;
-		getline(cin, command);
+		//putchar('>');
+		if (!getline(cin, command)) break;
+		//cout << command << endl;
 		string cur = readIdentifier();
 		if (cur == "exit") {
 			break;
@@ -325,6 +327,7 @@ int main(int argc, char **argv) {
 						if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) break;
 						if (c == '\'') break;
 						if (c >= '0' && c <= '9') break;
+						if (c == '-') break;
 					}
 					backward();
 					if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {

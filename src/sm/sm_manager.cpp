@@ -268,8 +268,10 @@ void SM_Manager::DropTable(const string tableName) {
 		fprintf(stderr, "Error: foreign key on the table!\n");
 		return;
 	}
-	if (!_rmm->CloseFile(_tableFileID[_tables[tableID].tableName]))
+	if (!_rmm->CloseFile(_tableFileID[_tables[tableID].tableName])) {
 		fprintf(stderr, "Error: failed to close table file!\n");
+		return;
+	}
 	_rmm->DestroyFile(_tables[tableID].tableName.c_str());
 	system(("rm " + _tables[tableID].tableName + ".*").c_str());
 	_tables.erase(_tables.begin() + tableID);
@@ -302,24 +304,24 @@ void SM_Manager::CreateIndex(const string tableName, const vector<string> attrs)
 			fprintf(stderr, "Error: column does not exist!\n");
 			return;
 		}
-		_tables[tableID].attrs[attrID].haveIndex = true;
-		_ixm->CreateIndex(tableName.c_str(), attr.c_str(), _tables[tableID].attrs[attrID].attrType, _tables[tableID].attrs[attrID].attrLength);
-		cout << "create index" << endl;
+		//cout << "create index" << endl;
 		int fileID = _tableFileID[tableName];
 		RM_FileHandle *filehandle = new RM_FileHandle(fileManager, bufPageManager, fileID);
 		RM_FileScan *filescan = new RM_FileScan(fileManager, bufPageManager);
 		if (!filescan->OpenScan(filehandle)) return;
-		cout << "open file scan" << endl;
+		//cout << "open file scan" << endl;
+		_tables[tableID].attrs[attrID].haveIndex = true;
+		_ixm->CreateIndex(tableName.c_str(), attr.c_str(), _tables[tableID].attrs[attrID].attrType, _tables[tableID].attrs[attrID].attrLength);
 		int indexID;
 		_ixm->OpenIndex(tableName.c_str(), attr.c_str(), indexID);
 		IX_IndexHandle *indexhandle = new IX_IndexHandle(fileManager, bufPageManager, indexID);
-		cout << "open index" << endl;
+		//cout << "open index" << endl;
 		while (1) {
 			int pageID, slotID;
 			BufType data = new unsigned int[filehandle->_header.recordSize];
 			bool scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
 			BufType insertData = data + _tables[tableID].attrs[attrID].offset;
-			cout << pageID << " " << slotID << " " << *(int*)insertData << endl;
+			//cout << pageID << " " << slotID << " " << *(int*)insertData << endl;
 			indexhandle->InsertEntry((void*)insertData, pageID, slotID);
 			delete [] data;
 			if (!scanNotEnd) break;
