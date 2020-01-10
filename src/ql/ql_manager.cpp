@@ -73,7 +73,7 @@ void QL_Manager::Insert(const string tableName, vector<string> attrs, vector<Buf
 				size = _smm->_tables[tableID].attrs[attrID].attrLength;
 				ddd[size - 1] = '\0';
 			}
-			puts((char*)data + _smm->_tables[tableID].attrs[attrID].offset);
+			//puts((char*)data + _smm->_tables[tableID].attrs[attrID].offset);
 			memcpy(data + _smm->_tables[tableID].attrs[attrID].offset, ddd, size);
 		}
 	}
@@ -470,12 +470,14 @@ void QL_Manager::Load(const string tableName, const string fileName) {
 	for (int i = 0; i < _smm->_tables[tableID].attrNum; i++) {
 		attrs.push_back(_smm->_tables[tableID].attrs[i].attrName);
 	}
+	//cout << tableName << endl;
 	while (getline(load, str)) {
 		vector<BufType> values;
 		string buf = "";
 		int attrCnt = 0;
 		for (int i = 0; i < str.length(); i++) {
 			if (str[i] == '|') {
+				//cout << buf << endl;
 				if (_smm->_tables[tableID].attrs[attrCnt].attrType == INTEGER) {
 					int *d = new int; *d = atoi(buf.c_str());
 					values.push_back((BufType)d);
@@ -485,15 +487,17 @@ void QL_Manager::Load(const string tableName, const string fileName) {
 				} else if (_smm->_tables[tableID].attrs[attrCnt].attrType == STRING) {
 					char *d = new char[_smm->_tables[tableID].attrs[attrCnt].attrLength];
 					memset(d, 0, sizeof(char) * _smm->_tables[tableID].attrs[attrCnt].attrLength);
-					memcpy(d, str.c_str(), str.length());
+					//cout << "char: " << _smm->_tables[tableID].attrs[attrCnt].attrLength << ' ' << buf.length() << endl;
+					memcpy(d, buf.c_str(), min(_smm->_tables[tableID].attrs[attrCnt].attrLength, (int)buf.length()));
 					values.push_back((BufType)d);
 				}
-				str = "";
+				buf = "";
 				attrCnt++;
 			} else {
 				buf.push_back(str[i]);
 			}
 		}
+		//cout << endl;
 		Insert(tableName, attrs, values);
 	}
 	load.close();

@@ -12,6 +12,7 @@ insert into table1(a, b) values (12, 'abc')
 insert into table1(a, b, c) values(13, 'abcde', 2.24)
 select a, b, c from table1 where a > 0
 insert into table1(a, b) values (12, 'abc')
+create table customer(id int primary key not null, name char(30), address char(40), nation int not null, phone char(15), acctbal float, mktsegment char(10), comment char(120))
 
 建表：主键唯一，外键是合法属性，主键必须not null，表名不重复
 删表：是否有外键挂载，表名是否存在
