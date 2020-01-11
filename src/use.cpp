@@ -493,6 +493,44 @@ int main(int argc, char **argv) {
 						foreigns.push_back(foreign);
 					}
 					smm->AddForeignKey(tableName, attrs, refName, foreigns);
+				} else {
+					AttrInfo attr;
+					attr.attrName = cur;
+					string attrType = readIdentifier();
+					if (attrType == "int") {
+						attr.attrType = INTEGER;
+					} else if (attrType == "float") {
+						attr.attrType = FLOAT;
+					} else if (attrType == "char") {
+						attr.attrType = STRING;
+						string len = readIdentifier();
+						attr.attrLength = atoi(len.c_str());
+						char c = readChar();
+						while (c != ')') c = readChar();
+					}
+					cur = readIdentifier();
+					if (cur != "not") continue;
+					cur = readIdentifier();
+					if (cur != "null") continue;
+					cur = readIdentifier();
+					if (cur != "default") continue;
+					string modifier;
+					if (attrType == "int") {
+						modifier = readIdentifier();
+						int *d = new int; *d = atoi(modifier.c_str());
+						attr.defaultValue = (BufType)d;
+					} else if (attrType == "float") {
+						modifier = readIdentifier();
+						double *d = new double; *d = atof(modifier.c_str());
+						attr.defaultValue = (BufType)d;
+					} else if (attrType == "char") {
+						modifier = readString();
+						char *d = new char[attr.attrLength];
+						memset(d, 0, sizeof(char) * attr.attrLength);
+						memcpy(d, modifier.c_str(), min(attr.attrLength - 1, (int)modifier.length()));
+						attr.defaultValue = (BufType)d;
+					}
+					smm->AddColumn(tableName, attr);
 				}
 			} else if (cur == "drop") {
 				cur = readIdentifier();
@@ -505,6 +543,8 @@ int main(int argc, char **argv) {
 					if (cur != "key") continue;
 					string refName = readIdentifier();
 					smm->DropForeignKey(tableName, refName);
+				} else {
+					smm->DropColumn(tableName, cur);
 				}
 			}
 		}

@@ -53,7 +53,6 @@ public:
 	void DropForeignKey(const string tableName, string refName);
 	void AddColumn(const string tableName, AttrInfo attr);
 	void DropColumn(const string tableName, string attrName);
-	/*void ChangeColumn(const char *relName, const char *attrName, AttrInfo attr);*/
 	
 	bool _checkForeignKeyOnTable(int tableID);
 	int _fromNameToID(const string tableName);
