@@ -356,6 +356,70 @@ void SM_Manager::DropIndex(const string tableName, const vector<string> attrs) {
 		_ixm->DestroyIndex(tableName.c_str(), attr.c_str());
 	}
 }
+void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attrs) {
+	int tableID = _fromNameToID(tableName);
+	if (tableID == -1) {
+		fprintf(stderr, "Error: invalid table!\n");
+		return;
+	}
+	if (_tables[tableID].primary.size() != 0) {
+		fprintf(stderr, "Error: primary key already exists!\n");
+		return;
+	}
+	int primarySize = 0;
+	for (int i = 0; i < attrs.size(); i++) {
+		int attrID = _fromNameToID(attrs[i], tableID);
+		if (attrID == -1) {
+			fprintf(stderr, "Error: invalid columns!\n");
+			return;
+		}
+		if (!_tables[tableID].attrs[attrID].notNull) {
+			fprintf(stderr, "Error: primary keys must be not null!\n");
+			_tables[tableID].primary.clear();
+			return;
+		}
+		_tables[tableID].primary.push_back(attrID);
+		primarySize += _tables[tableID].attrs[attrID].attrLength;
+	}
+	sort(_tables[tableID].primary.begin(), _tables[tableID].primary.end());
+	for (int i = 0; i < _tables[tableID].primary.size(); i++) {
+		_tables[tableID].attrs[_tables[tableID].primary[i]].primary = true;
+	}
+	_tables[tableID].primarySize = primarySize;
+	int fileID = _tableFileID[tableName];
+	RM_FileHandle *filehandle = new RM_FileHandle(fileManager, bufPageManager, fileID);
+	RM_FileScan *filescan = new RM_FileScan(fileManager, bufPageManager);
+	bool scanNotEnd = filescan->OpenScan(filehandle);
+	//cout << "open file scan" << endl;
+	_ixm->CreateIndex(tableName.c_str(), "primary", STRING, primarySize);
+	int indexID;
+	_ixm->OpenIndex(tableName.c_str(), "primary", indexID);
+	IX_IndexHandle *indexhandle = new IX_IndexHandle(fileManager, bufPageManager, indexID);
+	//cout << "open index" << endl;
+	BufType data = new unsigned int[filehandle->_header.recordSize];
+	while (scanNotEnd) {
+		int pageID, slotID;
+		bool scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
+		BufType insertData = _getPrimaryKey(tableID, data);
+		if (indexhandle->CheckEntry((void*)insertData)) {
+			fprintf("Error: repetitive primary keys!\n");
+			delete [] data;
+			delete [] insertData;
+			delete filescan, filehandle, indexhandle;
+			_ixm->CloseIndex(indexID);
+			system("rm " + tableName + ".primary");
+			return;
+		}
+		indexhandle->InsertEntry((void*)insertData, pageID, slotID);
+		delete [] insertData;
+	}
+	delete [] data;
+	delete filescan, filehandle, indexhandle;
+	_ixm->CloseIndex(indexID);
+}
+void SM_Manager::DropPrimaryKey(const string tableName) {
+	
+}
 
 bool SM_Manager::_checkForeignKeyOnTable(int tableID) {
 	string tableName = _tables[tableID].tableName;

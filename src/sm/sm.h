@@ -47,16 +47,13 @@ public:
 	void DropTable(const string tableName);
 	void CreateIndex(const string tableName, const vector<string> attrs);
 	void DropIndex(const string tableName, const vector<string> attrs);
-	/*void AddPrimaryKey(const char *relName, const char *attrName);
-	void DropPrimaryKey(const char *relName);
-	void AddForeignKey(const char *relName, const char *attrName, const char *refName, const char *refAttr, const char *conName);
+	void AddPrimaryKey(const string tableName, const vector<string> attrs);
+	void DropPrimaryKey(const string tableName);
+	/*void AddForeignKey(const char *relName, const char *attrName, const char *refName, const char *refAttr, const char *conName);
 	void DropForeignKey(const char *relName, const char *conName);
 	void AddColumn(const char *relName, AttrInfo attr);
 	void DropColumn(const char *relName, const char *attrName);
-	void ChangeColumn(const char *relName, const char *attrName, AttrInfo attr);
-	void Load(const char *relName, const char *fileName);
-	void Print(const char *relName);
-	void Set(const char *paramName, const char *value);*/
+	void ChangeColumn(const char *relName, const char *attrName, AttrInfo attr);*/
 	
 	bool _checkForeignKeyOnTable(int tableID);
 	int _fromNameToID(const string tableName);
