@@ -49,9 +49,9 @@ public:
 	void DropIndex(const string tableName, const vector<string> attrs);
 	void AddPrimaryKey(const string tableName, const vector<string> attrs);
 	void DropPrimaryKey(const string tableName);
-	/*void AddForeignKey(const char *relName, const char *attrName, const char *refName, const char *refAttr, const char *conName);
-	void DropForeignKey(const char *relName, const char *conName);
-	void AddColumn(const char *relName, AttrInfo attr);
+	void AddForeignKey(const string tableName, vector<string> attrs, const string refName, vector<string> foreigns);
+	void DropForeignKey(const string tableName, string refName);
+	/*void AddColumn(const char *relName, AttrInfo attr);
 	void DropColumn(const char *relName, const char *attrName);
 	void ChangeColumn(const char *relName, const char *attrName, AttrInfo attr);*/
 	

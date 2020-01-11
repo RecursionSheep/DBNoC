@@ -327,7 +327,19 @@ void SM_Manager::CreateIndex(const string tableName, const vector<string> attrs)
 			delete [] data;
 			if (!scanNotEnd) break;
 		}
+		
+		/*IX_IndexScan *indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
+		char *sss = new char[10000];
+		memset(sss, 0, 10000);
+		indexscan->OpenScan(sss, true);
+		while (true) {
+			int page, slot;
+			bool hasNext = indexscan->GetNextEntry(page, slot);
+			if (!hasNext) break;
+		}*/
+		
 		delete filescan, filehandle, indexhandle;
+		
 		_ixm->CloseIndex(indexID);
 	}
 }
@@ -372,6 +384,7 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 		int attrID = _fromNameToID(attrs[i], tableID);
 		if (attrID == -1) {
 			fprintf(stderr, "Error: invalid columns!\n");
+			_tables[tableID].primary.clear();
 			return;
 		}
 		if (_tables[tableID].attrs[attrID].reference != "") {
@@ -403,13 +416,13 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 	IX_IndexHandle *indexhandle = new IX_IndexHandle(fileManager, bufPageManager, indexID);
 	//cout << "open index" << endl;
 	BufType data = new unsigned int[filehandle->_header.recordSize];
-	//int cnt = 0;
+	int cnt = 0;
 	while (scanNotEnd) {
 		int pageID, slotID;
 		scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
 		BufType insertData = _getPrimaryKey(tableID, data);
-		/*cnt++;
-		if (cnt <= 3) {
+		cnt++;
+		/*if (cnt <= 3) {
 			for (int i = 0; i < primarySize; i++) {
 				printf("%d ", ((char*)insertData)[i]);
 			}
@@ -430,13 +443,25 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 			system((string("rm ") + tableName + string(".primary")).c_str());
 			return;
 		}
-		/*if (cnt == 3) {
+		/*if (cnt == 50) {
 			system("sleep 10000");
 		}*/
+		//cout << "insert new" << endl;
 		indexhandle->InsertEntry((void*)insertData, pageID, slotID);
 		delete [] insertData;
+		
 		//if (!scanNotEnd) break;
 	}
+	/*IX_IndexScan *indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
+	char *sss = new char[10000];
+	memset(sss, 0, 10000);
+	indexscan->OpenScan(sss, true);
+	while (true) {
+		int page, slot;
+		bool hasNext = indexscan->GetNextEntry(page, slot);
+		if (!hasNext) break;
+	}*/
+	
 	delete [] data;
 	delete filescan, filehandle, indexhandle;
 	_ixm->CloseIndex(indexID);
@@ -462,6 +487,83 @@ void SM_Manager::DropPrimaryKey(const string tableName) {
 	_tables[tableID].primarySize = 0;
 	system((string("rm ") + tableName + string(".primary")).c_str());
 }
+void SM_Manager::AddForeignKey(const string tableName, vector<string> attrs, const string refName, vector<string> foreigns) {
+	int tableID = _fromNameToID(tableName);
+	if (tableID == -1) {
+		fprintf(stderr, "Error: invalid table!\n");
+		return;
+	}
+	int refID = _fromNameToID(refName);
+	if (refID == -1) {
+		fprintf(stderr, "Error: invalid reference table!\n");
+		return;
+	}
+	if (attrs.size() != foreigns.size() || foreigns.size() != _tables[refID].primary.size()) {
+		fprintf(stderr, "Error: should cover all primary keys!\n");
+		return;
+	}
+	if (_tables[refID].foreignSet.find(tableName) != _tables[refID].foreignSet.end()) {
+		fprintf(stderr, "Error: foreign keys already exists!\n");
+		return;
+	}
+	vector<int> attrIDs, foreignIDs;
+	int keyNum = _tables[refID].primary.size();
+	for (int i = 0; i < keyNum; i++) {
+		attrIDs.push_back(_fromNameToID(attrs[i], tableID));
+		foreignIDs.push_back(_fromNameToID(foreigns[i], refID));
+		if (attrIDs[i] == -1 || foreignIDs[i] == -1) {
+			fprintf(stderr, "Error: invalid columns!\n");
+			return;
+		}
+	}
+	
+	int fileID = _tableFileID[tableName];
+	RM_FileHandle *filehandle = new RM_FileHandle(fileManager, bufPageManager, fileID);
+	RM_FileScan *filescan = new RM_FileScan(fileManager, bufPageManager);
+	bool scanNotEnd = filescan->OpenScan(filehandle);
+	int indexID;
+	_ixm->OpenIndex(refName.c_str(), "primary", indexID);
+	IX_IndexHandle *indexhandle = new IX_IndexHandle(fileManager, bufPageManager, indexID);
+	int recordSize = _tables[tableID].recordSize;
+	BufType data = new unsigned int[recordSize >> 2];
+	int pageID, slotID;
+	int refSize = _tables[refID].primarySize;
+	BufType refData = new unsigned int[refSize >> 2];
+	while (scanNotEnd) {
+		scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
+		int pos = 0;
+		for (int i = 0; i < _tables[refID].primary.size(); i++) {
+			string primaryName = _tables[refID].attrs[_tables[refID].primary[i]].attrName;
+			int primaryID = _tables[refID].primary[i];
+			int attr = -1;
+			for (int j = 0; j < _tables[tableID].attrNum; j++) if (foreignIDs[j] == primaryID) {
+				attr = attrIDs[j]; break;
+			}
+			memcpy(refData + pos, data + _tables[tableID].attrs[attr].offset, _tables[tableID].attrs[attr].attrLength);
+			pos += (_tables[tableID].attrs[attr].attrLength >> 2);
+		}
+		bool check = indexhandle->CheckEntry(refData);
+		if (!check) {
+			fprintf(stderr, "Error: some foreign keys are not in the reference table!\n");
+			delete [] refData;
+			delete [] data;
+			_ixm->CloseIndex(indexID);
+			delete indexhandle, filescan, filehandle;
+			return;
+		}
+	}
+	for (int i = 0; i < attrIDs.size(); i++) {
+		_tables[tableID].attrs[attrIDs[i]].reference = refName;
+		_tables[tableID].attrs[attrIDs[i]].foreignKeyName = _tables[refID].attrs[foreignIDs[i]].attrName;
+	}
+	_tables[refID].foreignSet.insert(tableName);
+	_tables[refID].foreign.push_back(tableName);
+	delete [] refData;
+	delete [] data;
+	_ixm->CloseIndex(indexID);
+	delete indexhandle, filescan, filehandle;
+}
+void DropForeignKey(const string tableName, string ref);
 
 bool SM_Manager::_checkForeignKeyOnTable(int tableID) {
 	string tableName = _tables[tableID].tableName;

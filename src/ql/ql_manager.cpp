@@ -4,6 +4,7 @@
 #include <cstring>
 #include <algorithm>
 #include <fstream>
+#include <cassert>
 using namespace std;
 
 QL_Manager::QL_Manager(SM_Manager *smm, IX_Manager *ixm, RM_Manager *rmm, FileManager *_fileManager, BufPageManager *_bufPageManager) {
@@ -33,15 +34,18 @@ void QL_Manager::Insert(const string tableName, vector<string> attrs, vector<Buf
 		BufType value = _smm->_tables[tableID].attrs[i].defaultValue;
 		bitmap[0] |= 1ull << attrID;
 		if (_smm->_tables[tableID].attrs[attrID].attrType == INTEGER) {
+			assert(_smm->_tables[tableID].attrs[attrID].attrLength == 4);
 			int d = *(int*)value;
 			memcpy(data + _smm->_tables[tableID].attrs[attrID].offset, &d, 4);
 		} else if (_smm->_tables[tableID].attrs[attrID].attrType == FLOAT) {
+			assert(_smm->_tables[tableID].attrs[attrID].attrLength == 8);
 			double dd = *(double*)value;
 			memcpy(data + _smm->_tables[tableID].attrs[attrID].offset, &dd, 8);
 		} else if (_smm->_tables[tableID].attrs[attrID].attrType == STRING) {
 			char *ddd = (char*)value;
 			int size = strlen(ddd);
-			fill(data + _smm->_tables[tableID].attrs[attrID].offset, data + _smm->_tables[tableID].attrs[attrID].offset + (_smm->_tables[tableID].attrs[attrID].attrLength >> 2), 0);
+			memset(data + _smm->_tables[tableID].attrs[attrID].offset, 0, sizeof(char) * _smm->_tables[tableID].attrs[attrID].attrLength);
+			//fill(data + _smm->_tables[tableID].attrs[attrID].offset, data + _smm->_tables[tableID].attrs[attrID].offset + (_smm->_tables[tableID].attrs[attrID].attrLength >> 2), 0);
 			// 把字符串长度设定为表定义的长度，注意末尾\0
 			if (size >= _smm->_tables[tableID].attrs[attrID].attrLength) {
 				size = _smm->_tables[tableID].attrs[attrID].attrLength;
@@ -59,15 +63,18 @@ void QL_Manager::Insert(const string tableName, vector<string> attrs, vector<Buf
 		}
 		bitmap[0] |= 1ull << attrID;
 		if (_smm->_tables[tableID].attrs[attrID].attrType == INTEGER) {
+			assert(_smm->_tables[tableID].attrs[attrID].attrLength == 4);
 			int d = *(int*)values[i];
 			memcpy(data + _smm->_tables[tableID].attrs[attrID].offset, &d, 4);
 		} else if (_smm->_tables[tableID].attrs[attrID].attrType == FLOAT) {
+			assert(_smm->_tables[tableID].attrs[attrID].attrLength == 8);
 			double dd = *(double*)values[i];
 			memcpy(data + _smm->_tables[tableID].attrs[attrID].offset, &dd, 8);
 		} else if (_smm->_tables[tableID].attrs[attrID].attrType == STRING) {
 			char *ddd = (char*)values[i];
 			int size = strlen(ddd);
-			fill(data + _smm->_tables[tableID].attrs[attrID].offset, data + _smm->_tables[tableID].attrs[attrID].offset + (_smm->_tables[tableID].attrs[attrID].attrLength >> 2), 0);
+			memset(data + _smm->_tables[tableID].attrs[attrID].offset, 0, sizeof(char) * _smm->_tables[tableID].attrs[attrID].attrLength);
+			//fill(data + _smm->_tables[tableID].attrs[attrID].offset, data + _smm->_tables[tableID].attrs[attrID].offset + (_smm->_tables[tableID].attrs[attrID].attrLength >> 2), 0);
 			// 把字符串长度设定为表定义的长度，注意末尾\0
 			if (size >= _smm->_tables[tableID].attrs[attrID].attrLength) {
 				size = _smm->_tables[tableID].attrs[attrID].attrLength;

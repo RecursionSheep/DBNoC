@@ -73,8 +73,11 @@ bool IX_IndexScan::GetNextEntry(int &pageID, int &slotID) {
 	if (_nodeID == 0) return false;
 	IX_TreeNode *node = _getNode(_nodeID);
 	bufPageManager->access(node->index);
+	//void *pData = node->key + _entry * _header.attrLen;
+	//cout << *(int*)pData << endl;//" " << (char*)((int*)pData + 1) << endl;
 	pageID = node->page[_entry]; slotID = node->slot[_entry];
 	if (_entry + 1 == node->header.keyNum) {
+		cout << "new leaf" << endl;
 		if (node->header.nextLeaf == 0) {
 			//fprintf(stderr, "node %d next leaf %d keynum %d\n", _nodeID, node->header.nextLeaf, node->header.keyNum);
 			delete node;

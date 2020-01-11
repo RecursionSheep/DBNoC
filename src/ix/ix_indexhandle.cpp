@@ -1,6 +1,8 @@
 #include "ix.h"
 #include <cstring>
 
+//int cnt = 0;
+
 IX_IndexHandle::IX_IndexHandle(FileManager *_fileManager, BufPageManager *_bufPageManager, int fileID) {
 	fileManager = _fileManager; bufPageManager = _bufPageManager;
 	_fileID = fileID;
@@ -268,6 +270,7 @@ bool IX_IndexHandle::CheckEntry(void *pData) {
 					break;
 				}
 			}
+			//cnt++;
 			if (_entry == -1) {
 				id = node->header.nextLeaf;
 				_entry = 0;
@@ -277,6 +280,14 @@ bool IX_IndexHandle::CheckEntry(void *pData) {
 			}
 			//for (int i = 0; i < _header.attrLen; i++) printf("%d %d ", ((char*)pData)[i], ((char*)node->key + _entry * _header.attrLen)[i]);
 			//puts("");
+			/*if (cnt > 943744) {
+				cout << _header.attrLen << endl;
+				cout << *(int*)pData << " " << (char*)((int*)pData + 1) << endl;
+				for (int t = 0; t < node->header.keyNum; t++) {
+					void* entry = node->key + t * _header.attrLen;
+					cout << *(int*)entry << " " << (char*)((int*)entry + 1) << endl;
+				}
+			}*/
 			if (memcmp(pData, node->key + _entry * _header.attrLen, _header.attrLen) == 0) return true;
 			delete node;
 			break;

@@ -75,7 +75,7 @@ bool IX_Manager::CloseIndex(int fileID) {
 }
 
 bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int slot2, AttrType attrType, int attrLen) {
-	bool compareData1, compareData2;
+	bool compareData1 = false, compareData2 = false;
 	if (attrType == INTEGER) {
 		compareData1 = *((int*)data1) < *((int*)data2);
 		compareData2 = *((int*)data1) > *((int*)data2);
@@ -83,9 +83,23 @@ bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int 
 		compareData1 = *((double*)data1) < *((double*)data2);
 		compareData2 = *((double*)data1) > *((double*)data2);
 	} else if (attrType == STRING) {
-		int compareStr = memcmp(data1, data2, attrLen);
+		/*for (int i = 0; i < attrLen; i++) {
+			if (((char*)data1)[i] < ((char*)data2)[i]) {
+				compareData1 = true; compareData2 = false;
+				break;
+			}
+			if (((char*)data1)[i] > ((char*)data2)[i]) {
+				compareData1 = false; compareData2 = true;
+				break;
+			}
+		}*/
+		//if (*(int*)data1 < *(int*)data2) return true;
+		//if (*(int*)data1 > *(int*)data2) return false;
+		int compareStr = memcmp(((char*)data1), ((char*)data2), attrLen);
 		compareData1 = compareStr < 0;
 		compareData2 = compareStr > 0;
+	} else {
+		fprintf(stderr, "Error: invalid types!\n");
 	}
 	if (compareData1) return true;
 	if (compareData2) return false;
