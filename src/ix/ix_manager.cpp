@@ -74,7 +74,7 @@ bool IX_Manager::CloseIndex(int fileID) {
 	return true;
 }
 
-bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int slot2, AttrType attrType) {
+bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int slot2, AttrType attrType, int attrLen) {
 	bool compareData1, compareData2;
 	if (attrType == INTEGER) {
 		compareData1 = *((int*)data1) < *((int*)data2);
@@ -83,7 +83,7 @@ bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int 
 		compareData1 = *((double*)data1) < *((double*)data2);
 		compareData2 = *((double*)data1) > *((double*)data2);
 	} else if (attrType == STRING) {
-		int compareStr = strcmp((char*)data1, (char*)data2);
+		int compareStr = memcmp(data1, data2, attrLen);
 		compareData1 = compareStr < 0;
 		compareData2 = compareStr > 0;
 	}

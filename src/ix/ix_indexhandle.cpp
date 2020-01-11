@@ -14,6 +14,7 @@ IX_TreeNode* IX_IndexHandle::_getNode(int id) {
 	if (id == 0) return nullptr;
 	IX_TreeNode *node = new IX_TreeNode();
 	BufType data = bufPageManager->getPage(_fileID, id, node->index);
+	bufPageManager->access(node->index);
 	memcpy(&node->header, data, sizeof(IX_PageHeader));
 	node->data = data;
 	node->child = data + _header.childStart;
@@ -36,7 +37,7 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 		if (!node->header.isLeaf) {
 			bufPageManager->access(node->index);
 			for (int i = node->header.keyNum - 1; i >= 0; i--)
-				if (i == 0 || compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType)) {
+				if (i == 0 || compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType, _header.attrLen)) {
 					id = node->child[i];
 					break;
 				}
@@ -44,7 +45,7 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 			bool flag = false;
 			for (int i = node->header.keyNum - 1; i >= 0; i--) {
 				//fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
-				if (compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType)) {
+				if (compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType, _header.attrLen)) {
 					flag = true;
 					node->page[i + 1] = pageID; node->slot[i + 1] = slotID;
 					memcpy(node->key + (i + 1) * _header.attrLen, pData, _header.attrLen);
@@ -174,14 +175,14 @@ bool IX_IndexHandle::DeleteEntry(void *pData, int pageID, int slotID) {
 		if (!node->header.isLeaf) {
 			bufPageManager->access(node->index);
 			for (int i = node->header.keyNum - 1; i >= 0; i--)
-				if (i == 0 || !compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType)) {
+				if (i == 0 || !compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType, _header.attrType)) {
 					id = node->child[i];
 					break;
 				}
 		} else {
 			int pos = -1;
 			for (int i = node->header.keyNum - 1; i >= 0; i--) {
-				if (!compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType)) {
+				if (!compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType, _header.attrLen)) {
 					pos = i;
 					break;
 				}
@@ -250,7 +251,7 @@ bool IX_IndexHandle::CheckEntry(void *pData) {
 			bool flag = false;
 			for (int i = node->header.keyNum - 1; i >= 0; i--) {
 				//fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
-				if (compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType)) {
+				if (compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType, _header.attrLen)) {
 					id = node->child[i];
 					flag = true;
 					break;
@@ -260,22 +261,27 @@ bool IX_IndexHandle::CheckEntry(void *pData) {
 			if (!flag) id = node->child[0];
 		} else {
 			int _entry = -1;
-			//printf("keynum %d\n", node->header.keyNum);
 			for (int i = 0; i < node->header.keyNum; i++) {
-				//printf("%d %d\n", *(int*)pData, *(int*)node->key + i * _header.attrLen);
-				if (memcmp(pData, node->key + i * _header.attrLen, _header.attrLen) == 0) {
+				if (compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType, _header.attrLen)) {
+					//fprintf(stderr, "%.3lf %.3lf %d\n", *(double*)pData, *(double*)(node->key + i * _header.attrLen), *(double*)pData < *(double*)(node->key + i * _header.attrLen));
 					_entry = i;
 					break;
 				}
 			}
 			if (_entry == -1) {
+				id = node->header.nextLeaf;
+				_entry = 0;
 				delete node;
-				return false;
+				if (id == 0) return false;
+				node = _getNode(id);
 			}
+			//for (int i = 0; i < _header.attrLen; i++) printf("%d %d ", ((char*)pData)[i], ((char*)node->key + _entry * _header.attrLen)[i]);
+			//puts("");
+			if (memcmp(pData, node->key + _entry * _header.attrLen, _header.attrLen) == 0) return true;
 			delete node;
 			break;
 		}
 		delete node;
 	}
-	return true;
+	return false;
 }

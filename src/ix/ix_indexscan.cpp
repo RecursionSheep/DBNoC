@@ -39,7 +39,7 @@ bool IX_IndexScan::OpenScan(void *pData, bool lower) {
 			bool flag = false;
 			for (int i = node->header.keyNum - 1; i >= 0; i--) {
 				//fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
-				if (compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType)) {
+				if (compareLess(node->key + i * _header.attrLen, node->page[i], node->slot[i], pData, pageID, slotID, _header.attrType, _header.attrLen)) {
 					id = node->child[i];
 					flag = true;
 					break;
@@ -51,7 +51,7 @@ bool IX_IndexScan::OpenScan(void *pData, bool lower) {
 			_nodeID = id;
 			_entry = -1;
 			for (int i = 0; i < node->header.keyNum; i++) {
-				if (compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType)) {
+				if (compareLess(pData, pageID, slotID, node->key + i * _header.attrLen, node->page[i], node->slot[i], _header.attrType, _header.attrLen)) {
 					//fprintf(stderr, "%.3lf %.3lf %d\n", *(double*)pData, *(double*)(node->key + i * _header.attrLen), *(double*)pData < *(double*)(node->key + i * _header.attrLen));
 					_entry = i;
 					break;

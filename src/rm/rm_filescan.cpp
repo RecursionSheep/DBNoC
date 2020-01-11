@@ -42,5 +42,6 @@ bool RM_FileScan::GetNextRecord(int &pageID, int &slotID, BufType data) {
 	}
 	//cout << _pageID << ' ' << _slotID << ' ' << _filehandle->_header.pageNumber << endl;
 	if (_pageID >= _filehandle->_header.pageNumber) return false;
+	_slotID = _filehandle->_getNextOne(bitmap, _filehandle->_header.recordNumPerPage, _slotID);
 	return true;
 }

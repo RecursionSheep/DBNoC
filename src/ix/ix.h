@@ -89,4 +89,4 @@ private:
 	int _fileID;
 };
 
-bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int slot2, AttrType attrType);
+bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int slot2, AttrType attrType, int attrLen);

@@ -335,7 +335,7 @@ void QL_Manager::Delete(const string tableName, vector<Relation> relations) {
 				BufType attrData = data + _smm->_tables[tableID].attrs[attrs[i]].offset;
 				handles[i]->DeleteEntry(attrData, pageID, slotID);
 			}
-			filehandle->DeleteRec(pageID, slotID);
+			if (!filehandle->DeleteRec(pageID, slotID)) cout << "failed" << endl;
 		}
 		delete data;
 		if (!hasNext) break;
@@ -466,6 +466,9 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 						printf(" FLOAT %.6lf ", *(double*)out);
 					} else if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == STRING) {
 						printf(" STRING %s ", (char*)out);
+						/*for (int j = 0; j < _smm->_tables[tableID].attrs[attrIDs[i]].attrLength; j++) {
+							printf("%d ", ((char*)out)[j]);
+						}*/
 					}
 					putchar('|');
 				}
@@ -731,6 +734,7 @@ void QL_Manager::Load(const string tableName, const string fileName) {
 	}
 	//cout << tableName << endl;
 	cout << "loading ..." << endl;
+	//bool flag = false;
 	while (getline(load, str)) {
 		vector<BufType> values;
 		string buf = "";
@@ -758,6 +762,13 @@ void QL_Manager::Load(const string tableName, const string fileName) {
 			}
 		}
 		//cout << endl;
+		/*if (!flag) {
+			cout << tableName << endl;
+			cout << *(int*)values[0] << endl;
+			printf("%s\n", (char*)values[1]);
+			printf("%s\n", (char*)values[2]);
+			flag = true;
+		}*/
 		Insert(tableName, attrs, values);
 	}
 	load.close();

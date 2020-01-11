@@ -6,6 +6,7 @@ RM_FileHandle::RM_FileHandle(FileManager *_fileManager, BufPageManager *_bufPage
 	_fileID = fileID;
 	int index;
 	BufType data = bufPageManager->getPage(fileID, 0, index);
+	bufPageManager->access(index);
 	memcpy(&_header, data, sizeof(RM_FileHeader));
 }
 RM_FileHandle::~RM_FileHandle() {}
@@ -15,6 +16,7 @@ bool RM_FileHandle::GetRec(int pageID, int slotID, BufType data) const {
 	if (pageID >= _header.pageNumber) return false;
 	int index;
 	BufType buf = bufPageManager->getPage(_fileID, pageID, index);
+	bufPageManager->access(index);
 	buf += _header.bitmapStart;
 	if (!_getBit(buf, _header.recordNumPerPage, slotID)) return false;
 	buf += _header.bitmapSize + slotID * _header.recordSize;
@@ -39,6 +41,7 @@ bool RM_FileHandle::InsertRec(int &pageID, int &slotID, const BufType data) {
 	int index;
 	pageID = _header.firstFreePage;
 	BufType buf = bufPageManager->getPage(_fileID, pageID, index);
+	bufPageManager->access(index);
 	BufType bitmap = buf + _header.bitmapStart;
 	slotID = _getFirstZero(bitmap, _header.recordNumPerPage);
 	BufType record = bitmap + _header.bitmapSize + slotID * _header.recordSize;
@@ -57,6 +60,7 @@ bool RM_FileHandle::InsertRec(int &pageID, int &slotID, const BufType data) {
 bool RM_FileHandle::DeleteRec(int pageID, int slotID) {
 	int index;
 	BufType buf = bufPageManager->getPage(_fileID, pageID, index);
+	bufPageManager->access(index);
 	BufType bitmap = buf + _header.bitmapStart;
 	if (!_getBit(bitmap, _header.recordNumPerPage, slotID)) return false;
 	_setBit(bitmap, _header.recordNumPerPage, slotID, 0);
@@ -76,6 +80,7 @@ bool RM_FileHandle::DeleteRec(int pageID, int slotID) {
 bool RM_FileHandle::UpdateRec(int pageID, int slotID, const BufType data) {
 	int index;
 	BufType buf = bufPageManager->getPage(_fileID, pageID, index);
+	bufPageManager->access(index);
 	BufType bitmap = buf + _header.bitmapStart;
 	if (!_getBit(bitmap, _header.recordNumPerPage, slotID)) return false;
 	BufType record = bitmap + _header.bitmapSize + slotID * _header.recordSize;
@@ -91,18 +96,18 @@ void RM_FileHandle::_resetBitmap(uint *bitmap, int size) {
 	for (int i = 0; i < len; i++) bitmap[i] = 0;
 }
 void RM_FileHandle::_setBit(uint *bitmap, int size, int pos, bool bit) {
-	if (bit) bitmap[pos >> 5] |= 1 << (pos & 31); else bitmap[pos >> 5] &= ~(1 << (pos & 31));
+	if (bit) bitmap[pos >> 5] |= 1u << (pos & 31); else bitmap[pos >> 5] &= ~(1u << (pos & 31));
 }
 bool RM_FileHandle::_getBit(uint *bitmap, int size, int pos) const {
-	return (bitmap[pos >> 5] & (1 << (pos & 31))) > 0;
+	return (bitmap[pos >> 5] & (1u << (pos & 31))) > 0;
 }
 int RM_FileHandle::_getFirstZero(uint *bitmap, int size) const {
 	for (int i = 0; i < size; i++)
-		if (!(bitmap[i >> 5] & (1 << (i & 31)))) return i;
+		if (!(bitmap[i >> 5] & (1u << (i & 31)))) return i;
 	return -1;
 }
 int RM_FileHandle::_getNextOne(uint *bitmap, int size, int pos) const {
 	for (int i = pos; i < size; i++)
-		if (bitmap[i >> 5] & (1 << (i & 31))) return i;
+		if (bitmap[i >> 5] & (1u << (i & 31))) return i;
 	return -1;
 }

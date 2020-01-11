@@ -193,8 +193,8 @@ void SM_Manager::CreateTable(TableInfo* table) {
 		} else if (table->attrs[i].attrType == FLOAT) {
 			table->attrs[i].attrLength = 8;
 		}
+		while (table->attrs[i].attrLength % 4 != 0) table->attrs[i].attrLength++;
 		int size = table->attrs[i].attrLength;
-		while (size % 4 != 0) size++;
 		recordSize += size;
 		if (table->attrs[i].primary) {
 			table->attrs[i].notNull = true;
@@ -403,11 +403,19 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 	IX_IndexHandle *indexhandle = new IX_IndexHandle(fileManager, bufPageManager, indexID);
 	//cout << "open index" << endl;
 	BufType data = new unsigned int[filehandle->_header.recordSize];
+	//int cnt = 0;
 	while (scanNotEnd) {
 		int pageID, slotID;
 		scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
 		BufType insertData = _getPrimaryKey(tableID, data);
-		cout << *(int*)insertData << endl;
+		/*cnt++;
+		if (cnt <= 3) {
+			for (int i = 0; i < primarySize; i++) {
+				printf("%d ", ((char*)insertData)[i]);
+			}
+			puts("");
+		}*/
+		//cout << *(int*)insertData << endl;
 		if (indexhandle->CheckEntry((void*)insertData)) {
 			fprintf(stderr, "Error: repetitive primary keys!\n");
 			for (int i = 0; i < _tables[tableID].primary.size(); i++) {
@@ -422,6 +430,9 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 			system((string("rm ") + tableName + string(".primary")).c_str());
 			return;
 		}
+		/*if (cnt == 3) {
+			system("sleep 10000");
+		}*/
 		indexhandle->InsertEntry((void*)insertData, pageID, slotID);
 		delete [] insertData;
 		//if (!scanNotEnd) break;
@@ -477,6 +488,7 @@ BufType SM_Manager::_getPrimaryKey(int tableID, BufType data) {
 	BufType primaryKey = new unsigned int[_tables[tableID].primarySize >> 2];
 	int pos = 0;
 	for (int i = 0; i < _tables[tableID].attrNum; i++) if (_tables[tableID].attrs[i].primary) {
+		memset(primaryKey + pos, 0, sizeof(char) * _tables[tableID].attrs[i].attrLength);
 		memcpy(primaryKey + pos, data + _tables[tableID].attrs[i].offset, _tables[tableID].attrs[i].attrLength);
 		pos += (_tables[tableID].attrs[i].attrLength >> 2);
 	}
