@@ -459,6 +459,32 @@ int main(int argc, char **argv) {
 			string tableName = readIdentifier();
 			string fileName = readIdentifier();
 			qlm->Load(tableName, fileName);
+		} else if (cur == "alter") {
+			cur = readIdentifier();
+			if (cur != "table") continue;
+			string tableName = readIdentifier();
+			cur = readIdentifier();
+			if (cur == "add") {
+				cur = readIdentifier();
+				if (cur == "primary") {
+					cur = readIdentifier();
+					if (cur != "key") continue;
+					vector<string> attrs;
+					while (1) {
+						string attr = readIdentifier();
+						if (attr == "") break;
+						attrs.push_back(attr);
+					}
+					smm->AddPrimaryKey(tableName, attrs);
+				}
+			} else if (cur == "drop") {
+				cur = readIdentifier();
+				if (cur == "primary") {
+					cur = readIdentifier();
+					if (cur != "key") continue;
+					smm->DropPrimaryKey(tableName);
+				}
+			}
 		}
 	}
 	smm->CloseDB();

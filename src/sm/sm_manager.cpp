@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <cstring>
+#include <algorithm>
 #include <unistd.h>
 using namespace std;
 
@@ -373,6 +374,11 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 			fprintf(stderr, "Error: invalid columns!\n");
 			return;
 		}
+		if (_tables[tableID].attrs[attrID].reference != "") {
+			fprintf(stderr, "Error: primary keys can not be foreign keys!\n");
+			_tables[tableID].primary.clear();
+			return;
+		}
 		if (!_tables[tableID].attrs[attrID].notNull) {
 			fprintf(stderr, "Error: primary keys must be not null!\n");
 			_tables[tableID].primary.clear();
@@ -399,26 +405,51 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 	BufType data = new unsigned int[filehandle->_header.recordSize];
 	while (scanNotEnd) {
 		int pageID, slotID;
-		bool scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
+		scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
 		BufType insertData = _getPrimaryKey(tableID, data);
+		cout << *(int*)insertData << endl;
 		if (indexhandle->CheckEntry((void*)insertData)) {
-			fprintf("Error: repetitive primary keys!\n");
+			fprintf(stderr, "Error: repetitive primary keys!\n");
+			for (int i = 0; i < _tables[tableID].primary.size(); i++) {
+				_tables[tableID].attrs[_tables[tableID].primary[i]].primary = false;
+			}
+			_tables[tableID].primary.clear();
+			_tables[tableID].primarySize = 0;
 			delete [] data;
 			delete [] insertData;
 			delete filescan, filehandle, indexhandle;
 			_ixm->CloseIndex(indexID);
-			system("rm " + tableName + ".primary");
+			system((string("rm ") + tableName + string(".primary")).c_str());
 			return;
 		}
 		indexhandle->InsertEntry((void*)insertData, pageID, slotID);
 		delete [] insertData;
+		//if (!scanNotEnd) break;
 	}
 	delete [] data;
 	delete filescan, filehandle, indexhandle;
 	_ixm->CloseIndex(indexID);
 }
 void SM_Manager::DropPrimaryKey(const string tableName) {
-	
+	int tableID = _fromNameToID(tableName);
+	if (tableID == -1) {
+		fprintf(stderr, "Error: invalid table!\n");
+		return;
+	}
+	if (_tables[tableID].primary.size() == 0) {
+		fprintf(stderr, "Error: primary key does not exist!\n");
+		return;
+	}
+	for (int i = 0; i < _tableNum; i++) if (_tables[i].foreignSet.find(tableName) != _tables[i].foreignSet.end()) {
+		fprintf(stderr, "Error: foreign keys on the table!\n");
+		return;
+	}
+	for (int i = 0; i < _tables[tableID].attrNum; i++) {
+		_tables[tableID].attrs[i].primary = false;
+	}
+	_tables[tableID].primary.clear();
+	_tables[tableID].primarySize = 0;
+	system((string("rm ") + tableName + string(".primary")).c_str());
 }
 
 bool SM_Manager::_checkForeignKeyOnTable(int tableID) {
