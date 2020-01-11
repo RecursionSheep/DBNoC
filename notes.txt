@@ -16,7 +16,7 @@ create table nation(id int primary key not null, name char(25), region int num n
 create table customer(id int primary key not null, name char(30) primary key not null, address char(40), nation int not null references nation id, phone char(15), acctbal float, mktsegment char(10), comment char(120))
 create table trip(duration int not null, start char(30) not null, stop char(30) not null, startid int, startname char(40), startlat float, startlong float, endid int, endname char(40), endlat float, endlong float, bikeid int, usertype char(20), birth int not null, gender int not null)
 create table temp(id int not null, duration int not null, start char(30) not null, stop char(30) not null, startid int not null, startname char(40) not null, startlat float not null, startlong float, endid int, endname char(40) not null, endlat float, endlong float, bikeid int, usertype char(20), birth int, gender int not null)
-load temp datatrip.tbl
+load temp datatrip1.tbl
 alter table temp add primary key (duration, start, stop)
 insert into temp(duration, start, stop) values(219, '2019-02-01 00:00:06.2570', '2019-02-01 00:03:46.1090')
 

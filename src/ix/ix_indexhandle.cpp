@@ -66,7 +66,7 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 			node->header.keyNum++;
 			//if (node->header.isLeaf) fprintf(stderr, "next leaf %d\n", node->header.nextLeaf);
 			
-			if (node->header.isLeaf && node->header.nextLeaf != 0) {
+			/*if (node->header.isLeaf && node->header.nextLeaf != 0) {
 				IX_TreeNode *nextLeaf = _getNode(node->header.nextLeaf);
 				void *data1 = (node->key + (node->header.keyNum - 1) * _header.attrLen);
 				void *data2 = nextLeaf->key;
@@ -80,7 +80,7 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 					assert(*(int*)data1 <= *(int*)data2);
 				}
 				delete nextLeaf;
-			}
+			}*/
 			
 			flag = false;
 			while (node->header.keyNum == _header.childNum) {
