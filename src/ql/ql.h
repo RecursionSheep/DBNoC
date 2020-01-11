@@ -35,6 +35,7 @@ public:
 	void Update(const Assign assign);
 	void Delete(const string tableName, vector<Relation> relations);
 	void Select(const string tableName, vector<Relation> relations, vector<string> attrNames);
+	void Select(string tableName1, string tableName2, vector<Relation> relations, vector<string> attrNames);
 	void Load(const string tableName, const string fileName);
 
 	bool _compare(BufType data1, BufType data2, CompOp op, AttrType type);

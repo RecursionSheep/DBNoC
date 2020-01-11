@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 	smm->OpenDB(string(argv[1], argv[1] + strlen(argv[1])));
 	while (1) {
 		pos = 0;
-		putchar('>');
+		putchar('>'); putchar(' ');
 		if (!getline(cin, command)) break;
 		//cout << command << endl;
 		string cur = readIdentifier();
@@ -448,7 +448,11 @@ int main(int argc, char **argv) {
 						}
 						relations.push_back(relation);
 					}
-					qlm->Select(tables[0], relations, attrs);
+					if (tables.size() == 1) {
+						qlm->Select(tables[0], relations, attrs);
+					} else {
+						qlm->Select(tables[0], tables[1], relations, attrs);
+					}
 				}
 			}
 		} else if (cur == "load") {

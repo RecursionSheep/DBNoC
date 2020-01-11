@@ -360,7 +360,7 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 	vector<int> attrIDs;
 	for (int i = 0; i < attrNames.size(); i++) {
 		int attrID = _smm->_fromNameToID(attrNames[i], tableID);
-		if (tableID == -1) {
+		if (attrID == -1) {
 			fprintf(stderr, "Error: invalid columns!\n");
 			return;
 		}
@@ -425,11 +425,18 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 			hasNext = filescan->GetNextRecord(pageID, slotID, data);
 		}
 		bool ok = true;
+		unsigned long long *bitmap = (unsigned long long*)data;
 		for (int i = 0; i < relations.size(); i++) {
 			BufType data1 = data + _smm->_tables[tableID].attrs[attrID1[i]].offset;
 			BufType data2 = relations[i].data;
 			if (data2 == nullptr) {
 				data2 = data + _smm->_tables[tableID].attrs[attrID2[i]].offset;
+			}
+			if (bitmap[0] & (1ull << attrID1[i]) == 0) {
+				ok = false; break;
+			}
+			if (bitmap[0] & (1ull << attrID2[i]) == 0) {
+				ok = false; break;
 			}
 			ok = _compare(data1, data2, relations[i].op, _smm->_tables[tableID].attrs[attrID1[i]].attrType);
 			if (i == indexRel && !ok) hasNext = false;
@@ -437,7 +444,6 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 		}
 		if (ok) {
 			putchar('|');
-			unsigned long long *bitmap = (unsigned long long*)data;
 			//cout << " bitmap: " << bitmap[0] << " |";
 			for (int i = 0; i < attrIDs.size(); i++) {
 				BufType out = data + _smm->_tables[tableID].attrs[attrIDs[i]].offset;
@@ -457,7 +463,7 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 			}
 			putchar('\n');
 		}
-		delete data;
+		delete [] data;
 		if (!hasNext) break;
 	}
 	if (found) {
@@ -465,6 +471,219 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 		_ixm->CloseIndex(indexID);
 	}
 	delete filescan, filehandle;
+}
+
+void QL_Manager::Select(string tableName1, string tableName2, vector<Relation> relations, vector<string> attrNames) {
+	int tableID1 = _smm->_fromNameToID(tableName1);
+	if (tableID1 == -1) {
+		fprintf(stderr, "Error: such table does not exist!\n");
+		return;
+	}
+	int tableID2 = _smm->_fromNameToID(tableName2);
+	if (tableID2 == -1) {
+		fprintf(stderr, "Error: such table does not exist!\n");
+		return;
+	}
+	if (tableID1 == tableID2) {
+		fprintf(stderr, "Error: cannot join same tables!\n");
+		return;
+	}
+	vector<pair<int, int> > attrIDs;
+	for (int i = 0; i < attrNames.size(); i++) {
+		int pos = attrNames[i].find('.');
+		if (pos == string::npos) {
+			fprintf(stderr, "Error: invalid columns!\n");
+			return;
+		}
+		string table = attrNames[i].substr(0, pos);
+		string attr = attrNames[i].substr(pos + 1);
+		int attrID = -1;
+		if (table == tableName1) {
+			attrID = _smm->_fromNameToID(attr, tableID1);
+			attrIDs.push_back(make_pair(tableID1, attrID));
+		} else if (table == tableName2) {
+			attrID = _smm->_fromNameToID(attr, tableID2);
+			attrIDs.push_back(make_pair(tableID2, attrID));
+		}
+		if (attrID == -1) {
+			fprintf(stderr, "Error: invalid columns!\n");
+			return;
+		}
+	}
+	vector<pair<int, int> > attrID1, attrID2;
+	for (int i = 0; i < relations.size(); i++) {
+		int tableID = _smm->_fromNameToID(relations[i].table1);
+		if (tableID == -1) {
+			fprintf(stderr, "Error: invalid tables!\n");
+			return;
+		}
+		int attr = _smm->_fromNameToID(relations[i].attr1, tableID);
+		if (attr == -1) {
+			fprintf(stderr, "Error: invalid columns!\n");
+			return;
+		}
+		attrID1.push_back(make_pair(tableID, attr));
+		if (relations[i].data != nullptr) {
+			attrID2.push_back(make_pair(-1, -1));
+			continue;
+		}
+		tableID = _smm->_fromNameToID(relations[i].table2);
+		if (tableID == -1) {
+			fprintf(stderr, "Error: invalid tables!\n");
+			return;
+		}
+		attr = _smm->_fromNameToID(relations[i].attr2, tableID);
+		if (attr == -1) {
+			fprintf(stderr, "Error: invalid columns!\n");
+			return;
+		}
+		attrID2.push_back(make_pair(tableID, attr));
+		if (_smm->_tables[attrID1[i].first].attrs[attrID1[i].second].attrType != _smm->_tables[attrID2[i].first].attrs[attrID2[i].second].attrType) {
+			fprintf(stderr, "Error: invalid comparison!\n");
+			return;
+		}
+	}
+	bool found = false;
+	int indexAttr = -1, indexRel = -1, indexID = -1;
+	IX_IndexScan *indexscan = nullptr;
+	for (int i = 0; i < relations.size(); i++) {
+		if (attrID2[i].first == -1) continue;
+		if (attrID1[i].first == attrID2[i].first) continue;
+		if (relations[i].op != EQ_OP) continue;
+		if (_smm->_tables[attrID1[i].first].attrs[attrID1[i].second].haveIndex) {
+			swap(attrID1[i], attrID2[i]);
+		}
+		if (!_smm->_tables[attrID2[i].first].attrs[attrID2[i].second].haveIndex) continue;
+		if (attrID1[i].first != tableID1) {
+			swap(tableID1, tableID2);
+			tableName1.swap(tableName2);
+		}
+		found = true;
+		indexAttr = attrID2[i].second; indexRel = i;
+		_ixm->OpenIndex(_smm->_tables[attrID2[i].first].tableName.c_str(), _smm->_tables[attrID2[i].first].attrs[attrID2[i].second].attrName.c_str(), indexID);
+		indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
+		break;
+	}
+	int fileID1 = _smm->_tableFileID[tableName1];
+	RM_FileHandle *filehandle1 = new RM_FileHandle(fileManager, bufPageManager, fileID1);
+	RM_FileScan *filescan1 = new RM_FileScan(fileManager, bufPageManager);
+	if (!filescan1->OpenScan(filehandle1)) {
+		delete filescan1, filehandle1;
+		if (found) {
+			_ixm->CloseIndex(indexID);
+			delete indexscan;
+		}
+		return;
+	}
+	int fileID2 = _smm->_tableFileID[tableName2];
+	RM_FileHandle *filehandle2 = new RM_FileHandle(fileManager, bufPageManager, fileID2);
+	RM_FileScan *filescan2 = new RM_FileScan(fileManager, bufPageManager);
+	if (!filescan2->OpenScan(filehandle2)) {
+		delete filescan1, filehandle1, filescan2, filehandle2;
+		if (found) {
+			_ixm->CloseIndex(indexID);
+			delete indexscan;
+		}
+		return;
+	}
+	int recordSize1 = _smm->_tables[tableID1].recordSize, recordSize2 = _smm->_tables[tableID2].recordSize;
+	int pageID, slotID;
+	while (1) {
+		BufType data1 = new unsigned int[recordSize1 >> 2], data2 = new unsigned int[recordSize2 >> 2];
+		bool hasNext = filescan1->GetNextRecord(pageID, slotID, data1);
+		if (found) {
+			BufType searchData = data1 + _smm->_tables[attrID1[indexRel].first].attrs[attrID1[indexRel].second].offset;
+			if (found) indexscan->OpenScan(searchData, true);
+		}
+		filescan2->OpenScan(filehandle2);
+		while (1) {
+			bool hasNext2;
+			if (found) {
+				hasNext2 = indexscan->GetNextEntry(pageID, slotID);
+				filehandle2->GetRec(pageID, slotID, data2);
+			} else {
+				hasNext2 = filescan2->GetNextRecord(pageID, slotID, data2);
+			}
+			bool ok = true;
+			unsigned long long *bitmap1 = (unsigned long long*)data1;
+			unsigned long long *bitmap2 = (unsigned long long*)data2;
+			for (int i = 0; i < relations.size(); i++) {
+				BufType attr1;
+				//cout << recordSize1 << " " << recordSize2 << endl;
+				//cout << _smm->_tables[attrID1[i].first].attrs[attrID1[i].second].offset << " " << _smm->_tables[attrID2[i].first].attrs[attrID2[i].second].offset << endl;
+				if (attrID1[i].first == tableID1) {
+					attr1 = data1 + _smm->_tables[tableID1].attrs[attrID1[i].second].offset;
+					if ((bitmap1[0] & (1ull << attrID1[i].second)) == 0) {
+						ok = false; break;
+					}
+				} else {
+					attr1 = data2 + _smm->_tables[tableID2].attrs[attrID1[i].second].offset;
+					if ((bitmap2[0] & (1ull << attrID1[i].second)) == 0) {
+						ok = false; break;
+					}
+				}
+				//cout << *(int*)attr1 << endl;
+				BufType attr2 = relations[i].data;
+				if (attr2 == nullptr) {
+					if (attrID2[i].first == tableID1) {
+						attr2 = data1 + _smm->_tables[tableID1].attrs[attrID2[i].second].offset;
+						if ((bitmap1[0] & (1ull << attrID2[i].second)) == 0) {
+							ok = false; break;
+						}
+					} else {
+						attr2 = data2 + _smm->_tables[tableID2].attrs[attrID2[i].second].offset;
+						if ((bitmap2[0] & (1ull << attrID2[i].second)) == 0) {
+							ok = false; break;
+						}
+					}
+				}
+				//cout << *(int*)attr2 << endl;
+				ok = _compare(attr1, attr2, relations[i].op, _smm->_tables[attrID1[i].first].attrs[attrID1[i].second].attrType);
+				if (i == indexRel && !ok) hasNext2 = false;
+				if (!ok) break;
+			}
+			if (ok) {
+				putchar('|');
+				//cout << " bitmap: " << bitmap[0] << " |";
+				for (int i = 0; i < attrIDs.size(); i++) {
+					BufType out;
+					if (attrIDs[i].first == tableID1) {
+						out = data1 + _smm->_tables[tableID1].attrs[attrIDs[i].second].offset;
+						if ((bitmap1[0] & (1ull << attrIDs[i].second)) == 0) {
+							printf(" NULL |");
+							continue;
+						}
+					} else {
+						out = data2 + _smm->_tables[tableID2].attrs[attrIDs[i].second].offset;
+						if ((bitmap2[0] & (1ull << attrIDs[i].second)) == 0) {
+							printf(" NULL |");
+							continue;
+						}
+					}
+					//cout << " " << (bitmap[0] & (1ull << attrIDs[i])) << " ";
+					if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == INTEGER) {
+						printf(" INT %d ", *(int*)out);
+					} else if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == FLOAT) {
+						printf(" FLOAT %.6lf ", *(double*)out);
+					} else if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == STRING) {
+						printf(" STRING %s ", (char*)out);
+					}
+					putchar('|');
+				}
+				putchar('\n');
+			}
+			if (!hasNext2) break;
+		}
+		
+		delete [] data1;
+		delete [] data2;
+		if (!hasNext) break;
+	}
+	if (found) {
+		delete indexscan;
+		_ixm->CloseIndex(indexID);
+	}
+	delete filescan1, filehandle1, filescan2, filehandle2;
 }
 
 void QL_Manager::Load(const string tableName, const string fileName) {
