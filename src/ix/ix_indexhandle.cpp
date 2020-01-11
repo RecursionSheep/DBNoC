@@ -100,6 +100,13 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 				} else
 					parentNode = _getNode(parent);
 				int whichChild = _whichChild(id, parentNode);
+				if (whichChild == -1) {
+					cout << id << " " << parent << endl;
+					for (int i = 0; i < parentNode->header.keyNum; i++)
+						cout << parentNode->child[i] << " ";
+					cout << endl;
+					assert(false);
+				}
 				for (int i = parentNode->header.keyNum; i > whichChild + 1; i--) {
 					parentNode->child[i] = parentNode->child[i - 1];
 					parentNode->page[i] = parentNode->page[i - 1]; parentNode->slot[i] = parentNode->slot[i - 1];
@@ -115,37 +122,29 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 				node->header.keyNum /= 2;
 				for (int i = 0; i < newNode->header.keyNum; i++) {
 					newNode->child[i] = node->child[i + node->header.keyNum];
+					if (newNode->child[i] != 0) {
+						IX_TreeNode *childNode = _getNode(newNode->child[i]);
+						childNode->header.parent = newID;
+						_writeBackNode(childNode);
+						delete childNode;
+					}
 					newNode->page[i] = node->page[i + node->header.keyNum];
 					newNode->slot[i] = node->slot[i + node->header.keyNum];
 					memcpy(newNode->key + i * _header.attrLen, node->key + (i + node->header.keyNum) * _header.attrLen, _header.attrLen);
 				}
-				/*fprintf(stderr, "split: ");
-				for (int i = 0; i < node->header.keyNum; i++)
-					fprintf(stderr, "%.3lf ", *(double*)(node->key + i * _header.attrLen));
-				fprintf(stderr, "\n");
-				fprintf(stderr, "split: ");
-				for (int i = 0; i < newNode->header.keyNum; i++)
-					fprintf(stderr, "%.3lf ", *(double*)(newNode->key + i * _header.attrLen));
-				fprintf(stderr, "\n");*/
 				if (node->header.isLeaf) {
 					newNode->header.nextLeaf = node->header.nextLeaf;
 					newNode->header.prevLeaf = id;
-					/*if (node->header.nextLeaf != 0) {
+					if (node->header.nextLeaf != 0) {
 						IX_TreeNode *nextLeaf = _getNode(node->header.nextLeaf);
-						void *data1 = (newNode->key + (newNode->header.keyNum - 1) * _header.attrLen);
-						void *data2 = nextLeaf->key;
-						assert(*(int*)data1 <= *(int*)data2);
+						//void *data1 = (newNode->key + (newNode->header.keyNum - 1) * _header.attrLen);
+						//void *data2 = nextLeaf->key;
+						//assert(*(int*)data1 <= *(int*)data2);
 						nextLeaf->header.prevLeaf = newID;
 						_writeBackNode(nextLeaf);
 						delete nextLeaf;
-					}*/
+					}
 					node->header.nextLeaf = newID;
-					//fprintf(stderr, "new next leaf %d\n", node->header.nextLeaf);
-				}
-				for (int i = whichChild + 2; i < parentNode->header.keyNum; i++) {
-					IX_TreeNode *child = _getNode(parentNode->child[i]);
-					_writeBackNode(child);
-					delete child;
 				}
 				memcpy(parentNode->key + whichChild * _header.attrLen, node->key, _header.attrLen);
 				memcpy(parentNode->key + (whichChild + 1) * _header.attrLen, newNode->key, _header.attrLen);
@@ -172,6 +171,13 @@ bool IX_IndexHandle::InsertEntry(void *pData, int pageID, int slotID) {
 			while (id != _header.rootPage) {
 				IX_TreeNode *parentNode = _getNode(node->header.parent);
 				int whichChild = _whichChild(id, parentNode);
+				if (whichChild == -1) {
+					cout << id << " " << node->header.parent << endl;
+					for (int i = 0; i < parentNode->header.keyNum; i++)
+						cout << parentNode->child[i] << " ";
+					cout << endl;
+					assert(false);
+				}
 				parentNode->page[whichChild] = node->page[0]; parentNode->slot[whichChild] = node->slot[0];
 				memcpy(parentNode->key + whichChild * _header.attrLen, node->key, _header.attrLen);
 				_writeBackNode(parentNode);
@@ -318,4 +324,6 @@ int IX_IndexHandle::_whichChild(int child, IX_TreeNode* parent) {
 	for (int i = 0; i < parent->header.keyNum; i++) {
 		if (parent->child[i] == child) return i;
 	}
+	return -1;
+	//cout << "failed" << child << endl;
 }
