@@ -329,7 +329,7 @@ void SM_Manager::CreateIndex(const string tableName, const vector<string> attrs)
 			if (!scanNotEnd) break;
 		}
 		
-		/*IX_IndexScan *indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
+		IX_IndexScan *indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
 		char *sss = new char[10000];
 		memset(sss, 0, 10000);
 		indexscan->OpenScan(sss, true);
@@ -337,7 +337,7 @@ void SM_Manager::CreateIndex(const string tableName, const vector<string> attrs)
 			int page, slot;
 			bool hasNext = indexscan->GetNextEntry(page, slot);
 			if (!hasNext) break;
-		}*/
+		}
 		
 		delete filescan, filehandle, indexhandle;
 		
@@ -458,7 +458,7 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 	/*for (int i = 0; i < _tables[tableID].primary.size(); i++) {
 		cout << _tables[tableID].primary[i] << endl;
 	}*/
-	/*IX_IndexScan *indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
+	IX_IndexScan *indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
 	char *sss = new char[10000];
 	memset(sss, 0, 10000);
 	indexscan->OpenScan(sss, true);
@@ -466,7 +466,7 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 		int page, slot;
 		bool hasNext = indexscan->GetNextEntry(page, slot);
 		if (!hasNext) break;
-	}*/
+	}
 	
 	delete [] data;
 	delete filescan, filehandle, indexhandle;

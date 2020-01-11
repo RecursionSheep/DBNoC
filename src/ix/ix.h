@@ -17,7 +17,7 @@ struct IX_PageHeader {
 	int isLeaf;
 	int keyNum;
 	int prevLeaf, nextLeaf;
-	int whichChild;
+	//int whichChild;
 	int parent;
 };
 
@@ -25,7 +25,7 @@ struct IX_TreeNode {
 public:
 	IX_PageHeader header;
 	BufType data, child, page, slot;
-	char *key;
+	unsigned char *key;
 	int index;
 };
 
@@ -62,6 +62,7 @@ public:
 	IX_TreeNode* _getNode(int id);
 private:
 	void _writeBackNode(IX_TreeNode* node);
+	int _whichChild(int child, IX_TreeNode* parent);
 	
 	int _fileID;
 	IX_FileHeader _header;

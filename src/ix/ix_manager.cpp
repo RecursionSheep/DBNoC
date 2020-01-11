@@ -29,6 +29,7 @@ bool IX_Manager::CreateIndex(const char *fileName, const char *attrName, AttrTyp
 	header.attrType = attrType;
 	header.attrLen = attrLen;
 	header.childNum = (PAGE_SIZE - sizeof(IX_PageHeader)) / (sizeof(int) * 3 + attrLen) - 1;
+	//header.childNum = min(header.childNum, 5);
 	header.rootPage = 1;
 	header.nodeNum = 2;
 	header.childStart = sizeof(IX_PageHeader) / sizeof(int);
@@ -44,7 +45,7 @@ bool IX_Manager::CreateIndex(const char *fileName, const char *attrName, AttrTyp
 	
 	IX_PageHeader pageHeader;
 	pageHeader.isLeaf = true;
-	pageHeader.keyNum = pageHeader.parent = pageHeader.whichChild = 0;
+	pageHeader.keyNum = pageHeader.parent = 0;
 	pageHeader.nextLeaf = pageHeader.prevLeaf = 0;
 	int pageIndex;
 	BufType pageBuf = bufPageManager->getPage(fileID, 1, pageIndex);
@@ -93,8 +94,8 @@ bool compareLess(void* data1, int page1, int slot1, void* data2, int page2, int 
 				break;
 			}
 		}*/
-		//if (*(int*)data1 < *(int*)data2) return true;
-		//if (*(int*)data1 > *(int*)data2) return false;
+		//if (*((int*)data1) < *((int*)data2)) return true;
+		//if (*((int*)data1) > *((int*)data2)) return false;
 		int compareStr = memcmp(((char*)data1), ((char*)data2), attrLen);
 		compareData1 = compareStr < 0;
 		compareData2 = compareStr > 0;

@@ -14,12 +14,13 @@ IX_TreeNode* IX_IndexScan::_getNode(int id) {
 	if (id == 0) return nullptr;
 	IX_TreeNode *node = new IX_TreeNode();
 	BufType data = bufPageManager->getPage(_fileID, id, node->index);
+	bufPageManager->access(node->index);
 	memcpy(&node->header, data, sizeof(IX_PageHeader));
 	node->data = data;
 	node->child = data + _header.childStart;
 	node->page = data + _header.pageStart;
 	node->slot = data + _header.slotStart;
-	node->key = (char*)(data + _header.keyStart);
+	node->key = (unsigned char*)(data + _header.keyStart);
 	return node;
 }
 void IX_IndexScan::_writeBackNode(IX_TreeNode *node) {
@@ -73,11 +74,11 @@ bool IX_IndexScan::GetNextEntry(int &pageID, int &slotID) {
 	if (_nodeID == 0) return false;
 	IX_TreeNode *node = _getNode(_nodeID);
 	bufPageManager->access(node->index);
-	//void *pData = node->key + _entry * _header.attrLen;
-	//cout << *(int*)pData << endl;//" " << (char*)((int*)pData + 1) << endl;
 	pageID = node->page[_entry]; slotID = node->slot[_entry];
+	void *pData = node->key + _entry * _header.attrLen;
+	cout << *(int*)pData << " " << pageID << " " << slotID << endl;//" " << (char*)((int*)pData + 1) << endl;
 	if (_entry + 1 == node->header.keyNum) {
-		cout << "new leaf" << endl;
+		//cout << "new leaf" << endl;
 		if (node->header.nextLeaf == 0) {
 			//fprintf(stderr, "node %d next leaf %d keynum %d\n", _nodeID, node->header.nextLeaf, node->header.keyNum);
 			delete node;
