@@ -411,10 +411,16 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 		indexAttr = attrID1[i]; indexRel = i;
 		_ixm->OpenIndex(tableName.c_str(), _smm->_tables[tableID].attrs[indexAttr].attrName.c_str(), indexID);
 		indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
-		indexscan->OpenScan(relations[i].data, true);
+		if (!indexscan->OpenScan(relations[i].data, true)) {
+			delete indexscan;
+			_ixm->CloseIndex(indexID);
+			delete filescan, filehandle; 
+			return;
+		}
 		break;
 	}
 	int recordSize = _smm->_tables[tableID].recordSize;
+	int outcnt = 0;
 	while (1) {
 		BufType data = new unsigned int[recordSize >> 2];
 		bool hasNext;
@@ -443,28 +449,35 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 			if (!ok) break;
 		}
 		if (ok) {
-			putchar('|');
-			//cout << " bitmap: " << bitmap[0] << " |";
-			for (int i = 0; i < attrIDs.size(); i++) {
-				BufType out = data + _smm->_tables[tableID].attrs[attrIDs[i]].offset;
-				//cout << " " << (bitmap[0] & (1ull << attrIDs[i])) << " ";
-				if ((bitmap[0] & (1ull << attrIDs[i])) == 0) {
-					printf(" NULL |");
-					continue;
-				}
-				if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == INTEGER) {
-					printf(" INT %d ", *(int*)out);
-				} else if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == FLOAT) {
-					printf(" FLOAT %.6lf ", *(double*)out);
-				} else if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == STRING) {
-					printf(" STRING %s ", (char*)out);
-				}
+			outcnt++;
+			if (outcnt <= 100) {
 				putchar('|');
+				//cout << " bitmap: " << bitmap[0] << " |";
+				for (int i = 0; i < attrIDs.size(); i++) {
+					BufType out = data + _smm->_tables[tableID].attrs[attrIDs[i]].offset;
+					//cout << " " << (bitmap[0] & (1ull << attrIDs[i])) << " ";
+					if ((bitmap[0] & (1ull << attrIDs[i])) == 0) {
+						printf(" NULL |");
+						continue;
+					}
+					if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == INTEGER) {
+						printf(" INT %d ", *(int*)out);
+					} else if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == FLOAT) {
+						printf(" FLOAT %.6lf ", *(double*)out);
+					} else if (_smm->_tables[tableID].attrs[attrIDs[i]].attrType == STRING) {
+						printf(" STRING %s ", (char*)out);
+					}
+					putchar('|');
+				}
+				putchar('\n');
 			}
-			putchar('\n');
 		}
 		delete [] data;
 		if (!hasNext) break;
+	}
+	if (outcnt > 100) {
+		puts("...");
+		printf("Altogether %d records.\n", outcnt);
 	}
 	if (found) {
 		delete indexscan;
@@ -588,14 +601,25 @@ void QL_Manager::Select(string tableName1, string tableName2, vector<Relation> r
 	}
 	int recordSize1 = _smm->_tables[tableID1].recordSize, recordSize2 = _smm->_tables[tableID2].recordSize;
 	int pageID, slotID;
+	int outcnt = 0;
 	while (1) {
 		BufType data1 = new unsigned int[recordSize1 >> 2], data2 = new unsigned int[recordSize2 >> 2];
 		bool hasNext = filescan1->GetNextRecord(pageID, slotID, data1);
 		if (found) {
 			BufType searchData = data1 + _smm->_tables[attrID1[indexRel].first].attrs[attrID1[indexRel].second].offset;
-			if (found) indexscan->OpenScan(searchData, true);
+			if (!indexscan->OpenScan(searchData, true)) {
+				delete [] data1;
+				delete [] data2;
+				if (!hasNext) break;
+				continue;
+			}
 		}
-		filescan2->OpenScan(filehandle2);
+		if (!filescan2->OpenScan(filehandle2)) {
+			delete [] data1;
+			delete [] data2;
+			if (!hasNext) break;
+			continue;
+		}
 		while (1) {
 			bool hasNext2;
 			if (found) {
@@ -643,34 +667,37 @@ void QL_Manager::Select(string tableName1, string tableName2, vector<Relation> r
 				if (!ok) break;
 			}
 			if (ok) {
-				putchar('|');
-				//cout << " bitmap: " << bitmap[0] << " |";
-				for (int i = 0; i < attrIDs.size(); i++) {
-					BufType out;
-					if (attrIDs[i].first == tableID1) {
-						out = data1 + _smm->_tables[tableID1].attrs[attrIDs[i].second].offset;
-						if ((bitmap1[0] & (1ull << attrIDs[i].second)) == 0) {
-							printf(" NULL |");
-							continue;
-						}
-					} else {
-						out = data2 + _smm->_tables[tableID2].attrs[attrIDs[i].second].offset;
-						if ((bitmap2[0] & (1ull << attrIDs[i].second)) == 0) {
-							printf(" NULL |");
-							continue;
-						}
-					}
-					//cout << " " << (bitmap[0] & (1ull << attrIDs[i])) << " ";
-					if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == INTEGER) {
-						printf(" INT %d ", *(int*)out);
-					} else if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == FLOAT) {
-						printf(" FLOAT %.6lf ", *(double*)out);
-					} else if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == STRING) {
-						printf(" STRING %s ", (char*)out);
-					}
+				outcnt++;
+				if (outcnt <= 100) {
 					putchar('|');
+					//cout << " bitmap: " << bitmap[0] << " |";
+					for (int i = 0; i < attrIDs.size(); i++) {
+						BufType out;
+						if (attrIDs[i].first == tableID1) {
+							out = data1 + _smm->_tables[tableID1].attrs[attrIDs[i].second].offset;
+							if ((bitmap1[0] & (1ull << attrIDs[i].second)) == 0) {
+								printf(" NULL |");
+								continue;
+							}
+						} else {
+							out = data2 + _smm->_tables[tableID2].attrs[attrIDs[i].second].offset;
+							if ((bitmap2[0] & (1ull << attrIDs[i].second)) == 0) {
+								printf(" NULL |");
+								continue;
+							}
+						}
+						//cout << " " << (bitmap[0] & (1ull << attrIDs[i])) << " ";
+						if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == INTEGER) {
+							printf(" INT %d ", *(int*)out);
+						} else if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == FLOAT) {
+							printf(" FLOAT %.6lf ", *(double*)out);
+						} else if (_smm->_tables[attrIDs[i].first].attrs[attrIDs[i].second].attrType == STRING) {
+							printf(" STRING %s ", (char*)out);
+						}
+						putchar('|');
+					}
+					putchar('\n');
 				}
-				putchar('\n');
 			}
 			if (!hasNext2) break;
 		}
@@ -678,6 +705,10 @@ void QL_Manager::Select(string tableName1, string tableName2, vector<Relation> r
 		delete [] data1;
 		delete [] data2;
 		if (!hasNext) break;
+	}
+	if (outcnt > 100) {
+		puts("...");
+		printf("Altogether %d records.\n", outcnt);
 	}
 	if (found) {
 		delete indexscan;

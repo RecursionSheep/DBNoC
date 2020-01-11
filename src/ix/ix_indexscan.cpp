@@ -62,6 +62,7 @@ bool IX_IndexScan::OpenScan(void *pData, bool lower) {
 				_entry = 0;
 			}
 			delete node;
+			if (_nodeID == 0) return false;
 			break;
 		}
 		delete node;

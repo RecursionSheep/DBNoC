@@ -15,7 +15,9 @@ insert into table1(a, b) values (12, 'abc')
 create table nation(id int primary key not null, name char(25), region int num not null, comment char(152))
 create table customer(id int primary key not null, name char(30) primary key not null, address char(40), nation int not null references nation id, phone char(15), acctbal float, mktsegment char(10), comment char(120))
 create table trip(duration int not null, start char(30), stop char(30), startid int, startname char(40), startlat float, startlong float, endid int, endname char(40), endlat float, endlong float, bikeid int, usertype char(20), birth int not null, gender int not null)
+create table temp(duration int not null, start char(30), stop char(30), startid int, startname char(40), startlat float, startlong float, endid int, endname char(40), endlat float, endlong float, bikeid int, usertype char(20), birth int not null, gender int not null)
 select duration, birth, startname from trip where duration == 175 and birth >= 1989
+select trip.birth, trip.duration, temp.duration from trip, temp where trip.birth == temp.duration
 
 建表：主键唯一，外键是合法属性，主键必须not null，表名不重复
 删表：是否有外键挂载，表名是否存在
