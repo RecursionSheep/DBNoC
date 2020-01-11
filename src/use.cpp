@@ -476,6 +476,23 @@ int main(int argc, char **argv) {
 						attrs.push_back(attr);
 					}
 					smm->AddPrimaryKey(tableName, attrs);
+				} else if (cur == "foreign") {
+					cur = readIdentifier();
+					if (cur != "key") continue;
+					vector<string> attrs;
+					while (1) {
+						string attr = readIdentifier();
+						if (attr == "references") break;
+						attrs.push_back(attr);
+					}
+					string refName = readIdentifier();
+					vector<string> foreigns;
+					while (1) {
+						string foreign = readIdentifier();
+						if (foreign == "") break;
+						foreigns.push_back(foreign);
+					}
+					smm->AddForeignKey(tableName, attrs, refName, foreigns);
 				}
 			} else if (cur == "drop") {
 				cur = readIdentifier();
@@ -483,6 +500,11 @@ int main(int argc, char **argv) {
 					cur = readIdentifier();
 					if (cur != "key") continue;
 					smm->DropPrimaryKey(tableName);
+				} else if (cur == "foreign") {
+					cur = readIdentifier();
+					if (cur != "key") continue;
+					string refName = readIdentifier();
+					smm->DropForeignKey(tableName, refName);
 				}
 			}
 		}

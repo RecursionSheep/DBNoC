@@ -84,7 +84,7 @@ void SM_Manager::OpenDB(const string DBName) {
 					_tables[i].attrs[j].notNull = true;
 				} else if (str == "PRIMARY") {
 					_tables[i].attrs[j].primary = true;
-					_tables[i].primary.push_back(i);
+					_tables[i].primary.push_back(j);
 				} else if (str == "DEFAULT") {
 					if (_tables[i].attrs[j].attrType == INTEGER) {
 						int *d = new int; metain >> *d;
@@ -92,6 +92,7 @@ void SM_Manager::OpenDB(const string DBName) {
 					} else if (_tables[i].attrs[j].attrType == STRING) {
 						string d; getline(metain, d);
 						_tables[i].attrs[j].defaultValue = (BufType)(new char[_tables[i].attrs[j].attrLength]);
+						memset(_tables[i].attrs[j].defaultValue, 0, _tables[i].attrs[j].attrLength * sizeof(char));
 						strcpy((char*)_tables[i].attrs[j].defaultValue, d.c_str());
 					} else if (_tables[i].attrs[j].attrType = FLOAT) {
 						double *d = new double; metain >> *d;
@@ -382,6 +383,7 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 	int primarySize = 0;
 	for (int i = 0; i < attrs.size(); i++) {
 		int attrID = _fromNameToID(attrs[i], tableID);
+		//cout << attrID << endl;
 		if (attrID == -1) {
 			fprintf(stderr, "Error: invalid columns!\n");
 			_tables[tableID].primary.clear();
@@ -452,6 +454,10 @@ void SM_Manager::AddPrimaryKey(const string tableName, const vector<string> attr
 		
 		//if (!scanNotEnd) break;
 	}
+	
+	for (int i = 0; i < _tables[tableID].primary.size(); i++) {
+		cout << _tables[tableID].primary[i] << endl;
+	}
 	/*IX_IndexScan *indexscan = new IX_IndexScan(fileManager, bufPageManager, indexID);
 	char *sss = new char[10000];
 	memset(sss, 0, 10000);
@@ -508,11 +514,19 @@ void SM_Manager::AddForeignKey(const string tableName, vector<string> attrs, con
 	}
 	vector<int> attrIDs, foreignIDs;
 	int keyNum = _tables[refID].primary.size();
+	/*for (int i = 0; i < keyNum; i++) {
+		cout << _tables[refID].primary[i] << endl;
+	}*/
 	for (int i = 0; i < keyNum; i++) {
 		attrIDs.push_back(_fromNameToID(attrs[i], tableID));
 		foreignIDs.push_back(_fromNameToID(foreigns[i], refID));
+		//cout << attrIDs[i] << " " << foreignIDs[i] << endl;
 		if (attrIDs[i] == -1 || foreignIDs[i] == -1) {
 			fprintf(stderr, "Error: invalid columns!\n");
+			return;
+		}
+		if (!_tables[tableID].attrs[attrIDs[i]].notNull) {
+			fprintf(stderr, "Error: foreign keys must be NOT-NULL!\n");
 			return;
 		}
 	}
@@ -529,21 +543,25 @@ void SM_Manager::AddForeignKey(const string tableName, vector<string> attrs, con
 	int pageID, slotID;
 	int refSize = _tables[refID].primarySize;
 	BufType refData = new unsigned int[refSize >> 2];
+	//cout << keyNum << endl;
 	while (scanNotEnd) {
 		scanNotEnd = filescan->GetNextRecord(pageID, slotID, data);
 		int pos = 0;
 		for (int i = 0; i < _tables[refID].primary.size(); i++) {
 			string primaryName = _tables[refID].attrs[_tables[refID].primary[i]].attrName;
 			int primaryID = _tables[refID].primary[i];
+			//cout << primaryName << " " << primaryID << endl;
 			int attr = -1;
-			for (int j = 0; j < _tables[tableID].attrNum; j++) if (foreignIDs[j] == primaryID) {
+			for (int j = 0; j < keyNum; j++) if (foreignIDs[j] == primaryID) {
 				attr = attrIDs[j]; break;
 			}
+			//cout << _tables[tableID].attrs[attr].attrName << endl;
 			memcpy(refData + pos, data + _tables[tableID].attrs[attr].offset, _tables[tableID].attrs[attr].attrLength);
 			pos += (_tables[tableID].attrs[attr].attrLength >> 2);
 		}
 		bool check = indexhandle->CheckEntry(refData);
 		if (!check) {
+			cout << (char*)refData << endl;
 			fprintf(stderr, "Error: some foreign keys are not in the reference table!\n");
 			delete [] refData;
 			delete [] data;
@@ -552,6 +570,7 @@ void SM_Manager::AddForeignKey(const string tableName, vector<string> attrs, con
 			return;
 		}
 	}
+	//cout << "finish" << endl;
 	for (int i = 0; i < attrIDs.size(); i++) {
 		_tables[tableID].attrs[attrIDs[i]].reference = refName;
 		_tables[tableID].attrs[attrIDs[i]].foreignKeyName = _tables[refID].attrs[foreignIDs[i]].attrName;
@@ -563,7 +582,51 @@ void SM_Manager::AddForeignKey(const string tableName, vector<string> attrs, con
 	_ixm->CloseIndex(indexID);
 	delete indexhandle, filescan, filehandle;
 }
-void DropForeignKey(const string tableName, string ref);
+void SM_Manager::DropForeignKey(const string tableName, string refName) {
+	int tableID = _fromNameToID(tableName);
+	if (tableID == -1) {
+		fprintf(stderr, "Error: invalid table!\n");
+		return;
+	}
+	int refID = _fromNameToID(refName);
+	if (refID == -1) {
+		fprintf(stderr, "Error: invalid reference table!\n");
+		return;
+	}
+	if (_tables[refID].foreignSet.find(tableName) == _tables[refID].foreignSet.end()) {
+		fprintf(stderr, "Error: table does not have the foreign keys!\n");
+		return;
+	}
+	_tables[refID].foreignSet.erase(tableName);
+	for (int i = 0; i < _tables[refID].foreign.size(); i++) if (_tables[refID].foreign[i] == tableName) {
+		_tables[refID].foreign.erase(_tables[refID].foreign.begin() + i);
+		break;
+	}
+	for (int i = 0; i < _tables[tableID].attrNum; i++) if (_tables[tableID].attrs[i].reference == refName) {
+		_tables[tableID].attrs[i].reference = "";
+		_tables[tableID].attrs[i].foreignKeyName = "";
+	}
+}
+void SM_Manager::AddColumn(const string tableName, AttrInfo attr) {
+	int tableID = _fromNameToID(tableName);
+	if (tableID == -1) {
+		fprintf(stderr, "Error: invalid table!\n");
+		return;
+	}
+	int recordSize = _tables[tableID].recordSize;
+	int newRecordSize = recordSize + attr.attrLength;
+	_rmm->CreateFile((_table[tableID]->tableName + ".backup.temp", newRecordSize);
+	int fileID = _tableFileID[table->tableName];
+	int newFileID;
+	_rmm->OpenFile((_table[tableID]->tableName + ".backup.temp").c_str(), newFileID);
+	RM_FileHandle *filehandle = new RM_FileHandle(FileManager, bufPageManager, fileID);
+	RM_FileHandle *newfilehandle = new RM_FileHandle(FileManager, bufPageManager, newFileID);
+	RM_FileScan *filescan = new RM_FileScan(FileManager, bufPageManager);
+	filescan->OpenScan(filehandle);
+	
+}
+void SM_Manager::DropColumn(const string tableName, string attrName) {
+}
 
 bool SM_Manager::_checkForeignKeyOnTable(int tableID) {
 	string tableName = _tables[tableID].tableName;

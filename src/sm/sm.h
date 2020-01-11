@@ -51,9 +51,9 @@ public:
 	void DropPrimaryKey(const string tableName);
 	void AddForeignKey(const string tableName, vector<string> attrs, const string refName, vector<string> foreigns);
 	void DropForeignKey(const string tableName, string refName);
-	/*void AddColumn(const char *relName, AttrInfo attr);
-	void DropColumn(const char *relName, const char *attrName);
-	void ChangeColumn(const char *relName, const char *attrName, AttrInfo attr);*/
+	void AddColumn(const string tableName, AttrInfo attr);
+	void DropColumn(const string tableName, string attrName);
+	/*void ChangeColumn(const char *relName, const char *attrName, AttrInfo attr);*/
 	
 	bool _checkForeignKeyOnTable(int tableID);
 	int _fromNameToID(const string tableName);
