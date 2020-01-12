@@ -323,11 +323,34 @@ void QL_Manager::Delete(const string tableName, vector<Relation> relations) {
 		BufType data = new unsigned int[recordSize >> 2];
 		bool hasNext = filescan->GetNextRecord(pageID, slotID, data);
 		bool ok = true;
+		unsigned long long *bitmap = (unsigned long long*)data;
 		for (int i = 0; i < relations.size(); i++) {
 			BufType data1 = data + _smm->_tables[tableID].attrs[attrID1[i]].offset;
 			BufType data2 = relations[i].data;
 			if (data2 == nullptr) {
 				data2 = data + _smm->_tables[tableID].attrs[attrID2[i]].offset;
+			}
+			if (relations[i].op == IS_NULL) {
+				//cout << (bitmap[0] & (1ull << attrID1[i])) << endl;
+				if ((bitmap[0] & (1ull << attrID1[i])) == 0) continue;
+				else {
+					ok = false;
+					break;
+				}
+			}
+			if (relations[i].op == IS_NOT_NULL) {
+				//cout << (bitmap[0] & (1ull << attrID1[i])) << endl;
+				if ((bitmap[0] & (1ull << attrID1[i])) != 0) continue;
+				else {
+					ok = false;
+					break;
+				}
+			}
+			if ((bitmap[0] & (1ull << attrID1[i])) == 0) {
+				ok = false; break;
+			}
+			if ((attrID2[i] != -1) && ((bitmap[0] & (1ull << attrID2[i])) == 0)) {
+				ok = false; break;
 			}
 			ok = _compare(data1, data2, relations[i].op, _smm->_tables[tableID].attrs[attrID1[i]].attrType);
 			if (!ok) break;
@@ -448,6 +471,14 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 			if (relations[i].op == IS_NULL) {
 				//cout << (bitmap[0] & (1ull << attrID1[i])) << endl;
 				if ((bitmap[0] & (1ull << attrID1[i])) == 0) continue;
+				else {
+					ok = false;
+					break;
+				}
+			}
+			if (relations[i].op == IS_NOT_NULL) {
+				//cout << (bitmap[0] & (1ull << attrID1[i])) << endl;
+				if ((bitmap[0] & (1ull << attrID1[i])) != 0) continue;
 				else {
 					ok = false;
 					break;
@@ -661,6 +692,12 @@ void QL_Manager::Select(string tableName1, string tableName2, vector<Relation> r
 							ok = false; break;
 						}
 					}
+					if (relations[i].op == IS_NOT_NULL) {
+						if ((bitmap1[0] & (1ull << attrID1[i].second)) != 0) continue;
+						else {
+							ok = false; break;
+						}
+					}
 					if ((bitmap1[0] & (1ull << attrID1[i].second)) == 0) {
 						ok = false; break;
 					}
@@ -668,6 +705,12 @@ void QL_Manager::Select(string tableName1, string tableName2, vector<Relation> r
 					attr1 = data2 + _smm->_tables[tableID2].attrs[attrID1[i].second].offset;
 					if (relations[i].op == IS_NULL) {
 						if ((bitmap2[0] & (1ull << attrID1[i].second)) == 0) continue;
+						else {
+							ok = false; break;
+						}
+					}
+					if (relations[i].op == IS_NOT_NULL) {
+						if ((bitmap2[0] & (1ull << attrID1[i].second)) != 0) continue;
 						else {
 							ok = false; break;
 						}

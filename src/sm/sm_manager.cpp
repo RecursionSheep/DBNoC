@@ -561,7 +561,7 @@ void SM_Manager::AddForeignKey(const string tableName, vector<string> attrs, con
 		}
 		bool check = indexhandle->CheckEntry(refData);
 		if (!check) {
-			cout << (char*)refData << endl;
+			//cout << (char*)refData << endl;
 			fprintf(stderr, "Error: some foreign keys are not in the reference table!\n");
 			delete [] refData;
 			delete [] data;

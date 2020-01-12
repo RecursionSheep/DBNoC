@@ -322,13 +322,15 @@ int main(int argc, char **argv) {
 					else if (cur == ">=") relation.op = GE_OP;
 					else if (cur == "==") relation.op = EQ_OP;
 					else if (cur == "<>") relation.op = NE_OP;
-					else if (cur == "is") relation.op = IS_NULL;
-					if (relation.op == IS_NULL) {
+					else if (cur == "is") {
 						cur = readIdentifier();
-						if (cur != "null") {
-							flag = false;
-							break;
-						}
+						if (cur == "not") {
+							relation.op = IS_NOT_NULL;
+							cur = readIdentifier();
+						} else
+							relation.op = IS_NULL;
+					}
+					if (relation.op == IS_NULL || relation.op == IS_NOT_NULL) {
 					} else {
 						char c;
 						while (1) {
@@ -420,13 +422,15 @@ int main(int argc, char **argv) {
 						else if (cur == ">=") relation.op = GE_OP;
 						else if (cur == "==") relation.op = EQ_OP;
 						else if (cur == "<>") relation.op = NE_OP;
-						else if (cur == "is") relation.op = IS_NULL;
-						if (relation.op == IS_NULL) {
+						else if (cur == "is") {
 							cur = readIdentifier();
-							if (cur != "null") {
-								flag = false;
-								break;
-							}
+							if (cur == "not") {
+								relation.op = IS_NOT_NULL;
+								cur = readIdentifier();
+							} else
+								relation.op = IS_NULL;
+						}
+						if (relation.op == IS_NULL || relation.op == IS_NOT_NULL) {
 						} else {
 							char c;
 							while (1) {
