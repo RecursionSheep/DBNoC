@@ -712,12 +712,12 @@ void SM_Manager::DropColumn(const string tableName, string attrName) {
 		int pageID, slotID;
 		hasNext = filescan->GetNextRecord(pageID, slotID, data);
 		unsigned long long *bitmap = (unsigned long long*)data;
-		cout << (char*)(data + pos) << endl;
+		//cout << (char*)(data + pos) << endl;
 		for (int i = pos; i < (newRecordSize >> 2); i++) {
 			data[i] = data[i + len];
 		}
-		cout << (char*)(data + pos) << endl;
-		cout << bitmap[0] << ' ';
+		//cout << (char*)(data + pos) << endl;
+		//cout << bitmap[0] << ' ';
 		for (int i = attrID; i < attrNum - 1; i++) {
 			if (bitmap[0] & (1ull << (i + 1))) {
 				bitmap[0] |= (1ull << i);
