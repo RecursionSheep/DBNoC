@@ -301,6 +301,7 @@ int main(int argc, char **argv) {
 			cur = readIdentifier();
 			if (cur == "where") {
 				vector<Relation> relations;
+				bool flag = true;
 				while (1) {
 					Relation relation;
 					cur = readIdentifier();
@@ -321,45 +322,55 @@ int main(int argc, char **argv) {
 					else if (cur == ">=") relation.op = GE_OP;
 					else if (cur == "==") relation.op = EQ_OP;
 					else if (cur == "<>") relation.op = NE_OP;
-					char c;
-					while (1) {
-						c = readChar();
-						if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) break;
-						if (c == '\'') break;
-						if (c >= '0' && c <= '9') break;
-						if (c == '-') break;
-					}
-					backward();
-					if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+					else if (cur == "is") relation.op = IS_NULL;
+					if (relation.op == IS_NULL) {
 						cur = readIdentifier();
-						int pos = cur.find('.');
-						if (pos == string::npos) {
-							relation.table2 = tableName;
-							relation.attr2 = cur;
-						} else {
-							relation.table2 = cur.substr(0, pos);
-							relation.attr2 = cur.substr(pos + 1);
+						if (cur != "null") {
+							flag = false;
+							break;
 						}
-						relation.data = nullptr;
 					} else {
-						AttrType type;
-						string value = readValue(&type);
-						if (value == ")") break;
-						if (type == INTEGER) {
-							int *d = new int; *d = atoi(value.c_str());
-							relation.data = (BufType)d;
-						} else if (type == FLOAT) {
-							double *d = new double; *d = atof(value.c_str());
-							relation.data = (BufType)d;
-						} else if (type == STRING) {
-							char *d = new char[value.length() + 1];
-							memset(d, 0, sizeof(char) * (value.length() + 1));
-							memcpy(d, value.c_str(), value.length());
-							relation.data = (BufType)d;
+						char c;
+						while (1) {
+							c = readChar();
+							if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) break;
+							if (c == '\'') break;
+							if (c >= '0' && c <= '9') break;
+							if (c == '-') break;
+						}
+						backward();
+						if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+							cur = readIdentifier();
+							int pos = cur.find('.');
+							if (pos == string::npos) {
+								relation.table2 = tableName;
+								relation.attr2 = cur;
+							} else {
+								relation.table2 = cur.substr(0, pos);
+								relation.attr2 = cur.substr(pos + 1);
+							}
+							relation.data = nullptr;
+						} else {
+							AttrType type;
+							string value = readValue(&type);
+							if (value == ")") break;
+							if (type == INTEGER) {
+								int *d = new int; *d = atoi(value.c_str());
+								relation.data = (BufType)d;
+							} else if (type == FLOAT) {
+								double *d = new double; *d = atof(value.c_str());
+								relation.data = (BufType)d;
+							} else if (type == STRING) {
+								char *d = new char[value.length() + 1];
+								memset(d, 0, sizeof(char) * (value.length() + 1));
+								memcpy(d, value.c_str(), value.length());
+								relation.data = (BufType)d;
+							}
 						}
 					}
 					relations.push_back(relation);
 				}
+				if (!flag) continue;
 				qlm->Delete(tableName, relations);
 			}
 		} else if (cur == "select") {
@@ -386,6 +397,7 @@ int main(int argc, char **argv) {
 				}
 				if (table == "where") {
 					vector<Relation> relations;
+					bool flag = true;
 					while (1) {
 						Relation relation;
 						cur = readIdentifier();
@@ -408,46 +420,56 @@ int main(int argc, char **argv) {
 						else if (cur == ">=") relation.op = GE_OP;
 						else if (cur == "==") relation.op = EQ_OP;
 						else if (cur == "<>") relation.op = NE_OP;
-						char c;
-						while (1) {
-							c = readChar();
-							if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) break;
-							if (c == '\'') break;
-							if (c >= '0' && c <= '9') break;
-						}
-						backward();
-						if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+						else if (cur == "is") relation.op = IS_NULL;
+						if (relation.op == IS_NULL) {
 							cur = readIdentifier();
-							//cout << cur << endl;
-							int pos = cur.find('.');
-							if (pos == string::npos) {
-								relation.table2 = tables[0];
-								relation.attr2 = cur;
-							} else {
-								relation.table2 = cur.substr(0, pos);
-								relation.attr2 = cur.substr(pos + 1);
+							if (cur != "null") {
+								flag = false;
+								break;
 							}
-							relation.data = nullptr;
 						} else {
-							AttrType type;
-							string value = readValue(&type);
-							//cout << value << endl;
-							if (value == "") break;
-							if (type == INTEGER) {
-								int *d = new int; *d = atoi(value.c_str());
-								relation.data = (BufType)d;
-							} else if (type == FLOAT) {
-								double *d = new double; *d = atof(value.c_str());
-								relation.data = (BufType)d;
-							} else if (type == STRING) {
-								char *d = new char[value.length() + 1];
-								memset(d, 0, sizeof(char) * (value.length() + 1));
-								memcpy(d, value.c_str(), value.length());
-								relation.data = (BufType)d;
+							char c;
+							while (1) {
+								c = readChar();
+								if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) break;
+								if (c == '\'') break;
+								if (c >= '0' && c <= '9') break;
+							}
+							backward();
+							if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+								cur = readIdentifier();
+								//cout << cur << endl;
+								int pos = cur.find('.');
+								if (pos == string::npos) {
+									relation.table2 = tables[0];
+									relation.attr2 = cur;
+								} else {
+									relation.table2 = cur.substr(0, pos);
+									relation.attr2 = cur.substr(pos + 1);
+								}
+								relation.data = nullptr;
+							} else {
+								AttrType type;
+								string value = readValue(&type);
+								//cout << value << endl;
+								if (value == "") break;
+								if (type == INTEGER) {
+									int *d = new int; *d = atoi(value.c_str());
+									relation.data = (BufType)d;
+								} else if (type == FLOAT) {
+									double *d = new double; *d = atof(value.c_str());
+									relation.data = (BufType)d;
+								} else if (type == STRING) {
+									char *d = new char[value.length() + 1];
+									memset(d, 0, sizeof(char) * (value.length() + 1));
+									memcpy(d, value.c_str(), value.length());
+									relation.data = (BufType)d;
+								}
 							}
 						}
 						relations.push_back(relation);
 					}
+					if (!flag) continue;
 					if (tables.size() == 1) {
 						qlm->Select(tables[0], relations, attrs);
 					} else {

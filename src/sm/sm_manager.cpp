@@ -726,7 +726,7 @@ void SM_Manager::DropColumn(const string tableName, string attrName) {
 			}
 		}
 		bitmap[0] &= ~(1ull << (attrNum - 1));
-		cout << bitmap[0] << endl;
+		//cout << bitmap[0] << endl;
 		newfilehandle->InsertRec(pageID, slotID, data);
 	}
 	delete [] data;

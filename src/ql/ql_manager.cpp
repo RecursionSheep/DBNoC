@@ -445,10 +445,18 @@ void QL_Manager::Select(const string tableName, vector<Relation> relations, vect
 			if (data2 == nullptr) {
 				data2 = data + _smm->_tables[tableID].attrs[attrID2[i]].offset;
 			}
-			if (bitmap[0] & (1ull << attrID1[i]) == 0) {
+			if (relations[i].op == IS_NULL) {
+				//cout << (bitmap[0] & (1ull << attrID1[i])) << endl;
+				if ((bitmap[0] & (1ull << attrID1[i])) == 0) continue;
+				else {
+					ok = false;
+					break;
+				}
+			}
+			if ((bitmap[0] & (1ull << attrID1[i])) == 0) {
 				ok = false; break;
 			}
-			if (bitmap[0] & (1ull << attrID2[i]) == 0) {
+			if ((attrID2[i] != -1) && ((bitmap[0] & (1ull << attrID2[i])) == 0)) {
 				ok = false; break;
 			}
 			ok = _compare(data1, data2, relations[i].op, _smm->_tables[tableID].attrs[attrID1[i]].attrType);
@@ -647,11 +655,23 @@ void QL_Manager::Select(string tableName1, string tableName2, vector<Relation> r
 				//cout << _smm->_tables[attrID1[i].first].attrs[attrID1[i].second].offset << " " << _smm->_tables[attrID2[i].first].attrs[attrID2[i].second].offset << endl;
 				if (attrID1[i].first == tableID1) {
 					attr1 = data1 + _smm->_tables[tableID1].attrs[attrID1[i].second].offset;
+					if (relations[i].op == IS_NULL) {
+						if ((bitmap1[0] & (1ull << attrID1[i].second)) == 0) continue;
+						else {
+							ok = false; break;
+						}
+					}
 					if ((bitmap1[0] & (1ull << attrID1[i].second)) == 0) {
 						ok = false; break;
 					}
 				} else {
 					attr1 = data2 + _smm->_tables[tableID2].attrs[attrID1[i].second].offset;
+					if (relations[i].op == IS_NULL) {
+						if ((bitmap2[0] & (1ull << attrID1[i].second)) == 0) continue;
+						else {
+							ok = false; break;
+						}
+					}
 					if ((bitmap2[0] & (1ull << attrID1[i].second)) == 0) {
 						ok = false; break;
 					}
