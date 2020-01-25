@@ -6,8 +6,3 @@ This project is named after **Fukube Satoshi's famous lines** (as illustrated be
 
 ![hyouka](hyouka.png)
 
-
-### Usage
-
-To be finished
-
