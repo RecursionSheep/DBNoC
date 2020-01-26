@@ -6,3 +6,25 @@ This project is named after **Fukube Satoshi's famous lines** (as illustrated be
 
 ![hyouka](hyouka.png)
 
+### Usage
+
+```
+cd src
+make
+```
+
+Use
+```
+./sm/create [database]
+```
+and
+```
+./sm/drop [database]
+```
+to create/drop databases.
+
+Use
+```
+./use [database]
+```
+to open databases.
