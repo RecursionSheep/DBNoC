@@ -13,18 +13,22 @@ cd src
 make
 ```
 
-Use
-```
-./sm/create [database]
-```
-and
-```
-./sm/drop [database]
-```
-to create/drop databases.
+Use ```./sm/create [database]``` and ``` ./sm/drop [database] ``` to create/drop databases.
 
-Use
-```
-./use [database]
-```
-to open databases.
+Use ``` ./use [database] ``` to open databases.
+
+### Supported Statements
+
+- ```create table ... (... [not null] [primary key] [foreign key ... references ...(...)] [default ...])```
+- ```drop table ...```
+- ```show```
+- ```alter table ... add primary key (...)```
+- ```alter table ... drop primary key```
+- ```alter table ... add foreign key (...) references ...(...)```
+- ```alter table ... drop foreign key ...```
+- ```alter table add ... not null default ...```
+- ```alter table drop ...```
+- ```insert into ...(...) values (...)```
+- ```delete from ... where ... [and ...]```
+- ```update ... set ... = ...```
+- ```select ... from ... where ... [and ...]```
