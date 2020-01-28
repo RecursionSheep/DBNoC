@@ -32,3 +32,7 @@ Use ``` ./use [database] ``` to open databases.
 - ```delete from ... where ... [and ...]```
 - ```update ... set ... = ...```
 - ```select ... from ... where ... [and ...]```
+
+### Optimization
+
+- There is a simple optimization when the ```where``` clause has constraints like ```a.col1 == b.col2``` with indexes on both columns.
