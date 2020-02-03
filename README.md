@@ -36,3 +36,7 @@ Use ``` ./use [database] ``` to open databases.
 ### Optimization
 
 - There is a simple optimization when the ```where``` clause has constraints like ```a.col1 == b.col2``` with indexes on both columns.
+
+### Reference
+
+- [Redbase Project](https://web.stanford.edu/class/cs346/2015/redbase.html)
